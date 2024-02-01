@@ -5,6 +5,9 @@ RecordThread::RecordThread()
     process = new QProcess(this);
     connect(process, SIGNAL(readyRead()), this, SLOT(readDiskData()));
 }
+
+
+
 void RecordThread::timerProcessSerialData(void)
 {
     int len=1024;
