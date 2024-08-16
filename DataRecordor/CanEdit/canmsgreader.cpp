@@ -41,7 +41,7 @@ bool CanMsgReader::readCanDataFromXml(QList<CanDataFormat>& canDataList, const Q
         QDomElement messageElement = messageNode.toElement();
         if (messageElement.tagName() == "Message") {
             CanDataFormat canData;
-            canData.id = messageElement.attribute("ID").toInt();
+            canData.id = messageElement.attribute("ID").toInt(nullptr, 16);
             canData.msgName = messageElement.attribute("Name");
 
             // 解析每个 Signal 节点
@@ -58,14 +58,29 @@ bool CanMsgReader::readCanDataFromXml(QList<CanDataFormat>& canDataList, const Q
                     signal.factor = signalElement.attribute("Factor").toDouble();
                     signal.offset = signalElement.attribute("Offset").toDouble();
 
-                    // 解析 ValueTable
+                    // 解析 ValueTable 节点
                     QDomNode valueTableNode = signalElement.firstChild();
                     while (!valueTableNode.isNull()) {
-                        QDomElement valueElement = valueTableNode.toElement();
-                        if (valueElement.tagName() == "Value") {
-                            int key = valueElement.attribute("Key").toInt();
-                            QString description = valueElement.attribute("Description");
-                            signal.valueTable.insert(key, description);
+                        QDomElement valueTableElement = valueTableNode.toElement();
+                        if (valueTableElement.tagName() == "ValueTable") {
+                            // 解析每个 Value 节点
+                            QDomNode valueNode = valueTableElement.firstChild();
+                            while (!valueNode.isNull()) {
+                                QDomElement valueElement = valueNode.toElement();
+                                if (valueElement.tagName() == "Value") {
+                                    int key=0;
+                                    QString keyStr = valueElement.attribute("Key");
+                                    // 判断是否包含 "0x"，如果包含则按16进制解析，否则按10进制解析
+                                    if (keyStr.startsWith("0x", Qt::CaseInsensitive)) {
+                                        key = keyStr.toInt(nullptr, 16);  // 16进制解析
+                                    } else {
+                                        key = keyStr.toInt();  // 10进制解析
+                                    }
+                                    QString description = valueElement.attribute("Description");
+                                    signal.valueTable.insert(key, description);
+                                }
+                                valueNode = valueNode.nextSibling();
+                            }
                         }
                         valueTableNode = valueTableNode.nextSibling();
                     }
@@ -83,6 +98,10 @@ bool CanMsgReader::readCanDataFromXml(QList<CanDataFormat>& canDataList, const Q
     return true;
 }
 
+QMap<QString,CanDataValue> CanMsgReader::getValues(const CanData &data, const QList<CanDataFormat> &canDataList)
+{
+    return  parseCanData( QByteArray((char *)data.data,8),canDataList,data.dataid);
+}
 
 // 辅助函数：从数据字节流中提取指定起始位和长度的值
 quint64 CanMsgReader::extractBits(const QByteArray &data, int startBit, int length) {
@@ -97,8 +116,9 @@ quint64 CanMsgReader::extractBits(const QByteArray &data, int startBit, int leng
 }
 
 // 解析 CAN 数据函数
-void CanMsgReader::parseCanData(const QByteArray &canFrame, const QList<CanDataFormat> &canDataList, int canId) {
+QMap<QString,CanDataValue> CanMsgReader::parseCanData(const QByteArray &canFrame, const QList<CanDataFormat> &canDataList, int canId) {
     // 查找与 CAN ID 匹配的消息
+    QMap<QString,CanDataValue> valueList;
     CanDataFormat canData;
     bool found = false;
     for (const CanDataFormat &data : canDataList) {
@@ -110,7 +130,7 @@ void CanMsgReader::parseCanData(const QByteArray &canFrame, const QList<CanDataF
     }
     if (!found) {
         qDebug() << "No matching CAN message found for ID:" << canId;
-        return;
+        return valueList;
     }
     qDebug() << "Parsing CAN message:" << canData.msgName << "with ID:" << canData.id;
 
@@ -138,6 +158,13 @@ void CanMsgReader::parseCanData(const QByteArray &canFrame, const QList<CanDataF
         // 输出解析结果
         qDebug() << " Signal Name:" << signal.name
                  << " Value:" << physicalValue
-                 << " Unit:" << signal.unit;
+                 <<signal.valueTable[physicalValue]
+                   << " Unit:" << signal.unit;
+        CanDataValue dataValue;
+        dataValue.value=physicalValue;
+        dataValue.valueDescription=signal.valueTable[physicalValue];
+        dataValue.unit=signal.unit;
+        valueList[signal.name]=dataValue;
     }
+    return valueList;
 }

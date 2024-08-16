@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,36 +15,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-UI_DIR  = ../obj/Gui
-MOC_DIR = ../obj/Moc
-OBJECTS_DIR = ../obj/Obj
-DESTDIR=../bin
-TARGET=DataRecordor
-
-SOURCES += \
-    FileSave/qfilesavethead.cpp \
-    FileSave/recordManager.cpp \
-    main.cpp \
-    mainwindow.cpp \
-    settings/inisettings.cpp
-
-HEADERS += \
-    FileSave/FileSaveData.h \
-    FileSave/qfilesavethead.h \
-    FileSave/recordManager.h \
-    data.h \
-    mainwindow.h \
-    settings/inisettings.h
-
-FORMS += \
-    mainwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-include($$PWD/Com/ComManager.pri)
-include($$PWD/Function/Function.pri)
-include($$PWD/CanEdit/CanEdit.pri)
-include($$PWD/DataBase/DataBase.pri)
+INCLUDEPATH += $$PWD
+
+HEADERS += \
+    $$PWD/dbDatas.h \
+    $$PWD/dbmanipulation.h \
+    $$PWD/dboperator.h
+
+SOURCES += \
+    $$PWD/dbmanipulation.cpp \
+    $$PWD/dboperator.cpp
+
+

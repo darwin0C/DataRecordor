@@ -3,6 +3,7 @@
 #include <QString>
 #include <QList>
 #include <QMap>
+#include <QVariant>
 
 
 struct CanSignal {
@@ -21,6 +22,13 @@ struct CanDataFormat {
     QString msgName;             // 消息名称
     QList<CanSignal> canSignals;    // 信号列表
 };
+
+struct CanDataValue {
+    QVariant value      ;
+    QString valueDescription;//描述
+    QString unit        ;//单位
+};
+
 
 
 #endif // DEVICEDATA_H

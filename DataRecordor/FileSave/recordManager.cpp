@@ -263,6 +263,7 @@ QByteArray RecordManager::HexStringToByteArray(QString HexString)
 }
 void RecordManager::SetSysTime(QString date,QString time)
 {
+#ifdef LINUX_MODE
     QString str = "date -s "+date;
     system(str.toLatin1().data());
     str = "date -s "+time;
@@ -270,4 +271,5 @@ void RecordManager::SetSysTime(QString date,QString time)
     //强制写入到CMOS
     //system("clock -w");
     isTimeSet=true;
+#endif
 }

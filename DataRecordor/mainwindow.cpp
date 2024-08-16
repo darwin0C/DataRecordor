@@ -40,7 +40,7 @@ void MainWindow::startLEDThread()
 void MainWindow::startStatus()
 {
     // 创建定时器和线程，并将它们的父对象设置为 this，避免内存泄漏
-    timerStatus = new QTimer(this);
+    timerStatus = new QTimer();
     StatusTimerThread = new QThread(this);
 
     // 将定时器移动到新线程
@@ -61,6 +61,10 @@ void MainWindow::startStatus()
 
 MainWindow::~MainWindow()
 {
+    StatusTimerThread->terminate();
+    StatusTimerThread->deleteLater();
+    ledTimerThread->terminate();
+    ledTimerThread->deleteLater();
     delete ui;
 }
 
@@ -157,10 +161,11 @@ void MainWindow::blankLED()
     {
         ledBalnkStr=ledRed_on;
     }
-
+#ifdef LINUX_MODE
     QByteArray cmdby_heartbeat = ledBalnkStr.toLatin1();
     char* charCmd_heartbeat = cmdby_heartbeat.data();
     system(charCmd_heartbeat);
+#endif
 }
 unsigned char calculateCheckCode(SerialDataSend* data)
 {

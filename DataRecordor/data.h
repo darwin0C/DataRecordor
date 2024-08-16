@@ -3,7 +3,7 @@
 
 #include <QStringList>
 #include <QDataStream>
-
+const QString DBDATEFileName="/data/dataBase.db" ; //数据库存储文件
 #pragma pack(1)  //内存1字节对齐
 
 
