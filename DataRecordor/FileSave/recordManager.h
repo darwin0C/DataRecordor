@@ -8,35 +8,29 @@
 #include <QProcess>
 #include <QDateTime>
 #include <QTextStream>
-const QString gPath="/run/media/mmcblk0p1/data/";
+#include "FileSave/FileSaveData.h"
+#include "data.h"
+const QString gPath="D:/dataSave/";
+
 const int diskMinFree=200*1024;
 
-class RecordThread : public QThread
+class RecordManager : public QThread
 {
     Q_OBJECT
-    void WriteToFile();
-    QString canDataRev;
+
     QMutex mutex,fileMutex;
-    QString dataToWrite;
-    QFile* file;
+
     QProcess *process;
-    bool isSDCardOK;
+
     QTextStream* txtOutput;
 
     QString currentDate;
     QString currentTime;
-    QString revDate,revTime;
+    QString revDate="",revTime="";
     QString gCurrentfileName="";
-    bool isCreatingFile=false;
 
-    int diskUsed;
-    int diskAll;
-    int diskUsedPercent;
-    int diskFree;
-    bool isTimeSet;
+    bool isTimeSet=false;
 
-    void timerProcessSerialData();
-    void readDiskData();
     void checkSize(const QString &result);
     void delOldestFile();
     void getAllFileName(QString path, QVector<QString> &path_vec);
@@ -44,12 +38,24 @@ class RecordThread : public QThread
     QByteArray HexStringToByteArray(QString HexString);
     void creatNewFile(QString date, QString time);
     void newfile(QString date, QString time);
-    QString getRecordData(QString dataRev);
+
     bool checkData(QString dataRev);
     int getCheckNum(QString data);
     void SetSysTime(QString date, QString time);
+    void checkTime(QString date, QString hour);
 public:
-    RecordThread();
+    QString getRecordData(SerialDataRev dataRev);
+    RecordManager();
+    int diskUsed;
+    int diskAll;
+    int diskUsedPercent;
+    int diskFree;
+    bool isSDCardOK=true;
+signals:
+    void creatFileSig(QString);
+
+private slots:
+    void readDiskData();
 };
 
 #endif // RECORDTHREAD_H
