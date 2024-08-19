@@ -8,13 +8,13 @@
 
 enum TARDATATables
 {
-    DB_target_data=1,
-    DB_reconTask_data,
-    DB_Equ_Ability,
+    DB_Equ_Name=1,
     DB_Equ_WorkStat,
-    DB_TaskReconPoints,
-    DB_TaskStat,
-    DB_CommandTask,
+    DB_Equ_ErrorInfo,
+    DB_Equ_TotalWorkTime,
+    DB_AlarmInfo,
+    DB_GunMoveInfo,
+    DB_GunShootInfo
 };
 
 

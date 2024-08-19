@@ -34,13 +34,16 @@ void DbManipulation::initial(QString path){
         database = QSqlDatabase::addDatabase("QSQLITE");
     database.setDatabaseName(path);
     dbMap.clear();
-    dbMap[DB_target_data]=("target_data");
-    dbMap[DB_reconTask_data]=("reconTask_data");
-    dbMap[DB_Equ_Ability]=("Equ_Ability");
+
+    dbMap[DB_Equ_Name]=("Equ_Name");
     dbMap[DB_Equ_WorkStat]=("Equ_WorkStat");
-    dbMap[DB_TaskReconPoints]=("TaskReconPoints");
-    dbMap[DB_TaskStat]=("TaskStat");//记录任务执行过程的状态
-    dbMap[DB_CommandTask]=("CommandReconTask");//指挥下发任务
+    dbMap[DB_Equ_ErrorInfo]=("Equ_ErrorInfo");
+    dbMap[DB_Equ_TotalWorkTime]=("Equ_TotalWorkTime");
+    dbMap[DB_AlarmInfo]=("AlarmInfo");
+    dbMap[DB_GunMoveInfo]=("GunMoveInfo");
+    dbMap[DB_GunShootInfo]=("GunShootInfo");
+
+
     if(openDb())
     {
         for(auto it=dbMap.begin();it!=dbMap.end();++it)
@@ -83,70 +86,73 @@ void DbManipulation::createTable(int index)
         return;
     }
     switch (index) {
-    case DB_target_data:
-        createCmd = QString("CREATE TABLE IF NOT EXISTS %1( "
-                            "time varchar(50),taskId varchar(50) ,targetId varchar(50) PRIMARY KEY,"
-                            "TargetType varchar(50),reconSource varchar(50),"
-                            "posType varchar(50),X REAL, Y REAL, H REAL,  "
-                            "A REAL,E REAL, R REAL, P REAL,N0 REAL,"
-                            "beta REAL,epsilon REAL, distance REAL,"
-                            "ImgName varchar(50));").arg(dbMap[DB_target_data]);
-        break;
-    case DB_reconTask_data:
-        createCmd =QString ("CREATE TABLE IF NOT EXISTS %1( "
-                            "taskId varchar(50) PRIMARY KEY,"
-                            "mainTaskId VARCHAR(50), "
-                            "beginTime varchar(50), lastTime INTEGER, "
-                            "executionUnit INTEGER,taskType INTEGER,"
-                            "taskStat INTEGER);").arg(dbMap[DB_reconTask_data]);
-        break;
-
-    case DB_Equ_Ability:
-        createCmd = QString("CREATE TABLE IF NOT EXISTS %1(id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            "EquType INTEGER,"
-                            "ccdEnabled INTEGER,  ccdMaxViewField REAL,  ccdMaxReconDistance REAL,"
-                            "irEnabled INTEGER,  irMaxViewField REAL,  irMaxReconDistance REAL,"
-                            "rangefinderEnabled INTEGER,  rangefinderMaxRangeDistance REAL, "
-                            "irradiatorEnabled INTEGER,  irradiatorMaxRangeDistance REAL, "
-                            "servEnabled INTEGER,  azMaxAngleRange REAL,  azMinAngleRange REAL, "
-                            "elMaxAngleRange REAL,elMinAngleRange REAL,"
-                            "AngleMeasurAccuracy REAL,turnAroundTime REAL,"
-                            "isBattery INTEGER, maxBatteryLift REAL);").arg(dbMap[DB_Equ_Ability]);
-
+    case DB_Equ_Name:
+        createCmd = QString("CREATE TABLE IF NOT EXISTS %1 ("
+                            "device_id INTEGER PRIMARY KEY, "
+                            "device_name varchar(50) NOT NULL)").arg(dbMap[DB_Equ_Name]);
         break;
 
     case DB_Equ_WorkStat:
-        createCmd = QString("CREATE TABLE IF NOT EXISTS %1(id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            "time varchar(50),"
-                            "EquType INTEGER, EquStat INTEGER, "
-                            "workFlag INTEGER, errorCode varchar(50));").arg(dbMap[DB_Equ_WorkStat]);
-        break;
-    case DB_TaskReconPoints://区域侦察任务/目标侦察任务
-        createCmd = QString("CREATE TABLE IF NOT EXISTS %1(id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            "taskId varchar(50),pointNum INTEGER, "
-                            "posType varchar(50),X REAL, Y REAL, H REAL,"
-                            "FOREIGN KEY (taskId) REFERENCES %2 (taskId) ON DELETE CASCADE);")
-                .arg(dbMap[DB_TaskReconPoints])
-                .arg(dbMap[DB_reconTask_data]);
+        createCmd = QString("CREATE TABLE IF NOT EXISTS %1 ("
+                            "stat_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            "device_id INTEGER NOT NULL, "
+                            "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                            "status varchar(50) NOT NULL, "
+                            "error_code BLOB, "
+                            "FOREIGN KEY (device_id) REFERENCES %2(device_id))")
+                .arg(dbMap[DB_Equ_WorkStat])
+                .arg(dbMap[DB_Equ_Name]);
         break;
 
-    case DB_TaskStat://侦察任务执行状态
+    case DB_Equ_ErrorInfo:
         createCmd = QString("CREATE TABLE IF NOT EXISTS %1(id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            "taskId varchar(50),"
-                            "time varchar(50), "
-                            "taskStat INTEGER,"
-                            "FOREIGN KEY (taskId) REFERENCES %2 (taskId) ON DELETE CASCADE);")
-                .arg(dbMap[DB_TaskStat])
-                .arg(dbMap[DB_reconTask_data]);
+                            "stat_id INTEGER NOT NULL, "
+                            "error_info varchar(50), "
+                            "FOREIGN KEY (stat_id) REFERENCES %2 (stat_id) ON DELETE CASCADE);")
+                .arg(dbMap[DB_Equ_ErrorInfo])
+                .arg(dbMap[DB_Equ_WorkStat]);
         break;
-    case DB_CommandTask:
-        createCmd = QString("CREATE TABLE IF NOT EXISTS %1 "
-                            "(taskId VARCHAR(50) PRIMARY KEY, "
-                            "taskType INTEGER, "
-                            "taskData BLOB, "
-                            "FOREIGN KEY (taskId) REFERENCES %2(taskId) ON DELETE CASCADE);")
-                .arg(dbMap[DB_CommandTask])
-                .arg(dbMap[DB_reconTask_data]);
+    case DB_Equ_TotalWorkTime:
+        createCmd = QString("CREATE TABLE IF NOT EXISTS %1(id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            "device_id INTEGER NOT NULL, "
+                            "total_worktime INTEGER NOT NULL, "
+                            "FOREIGN KEY (device_id) REFERENCES %2 (device_id) ON DELETE CASCADE);")
+                .arg(dbMap[DB_Equ_TotalWorkTime])
+                .arg(dbMap[DB_Equ_Name]);
+        break;
+    case DB_AlarmInfo:
+        createCmd = QString("CREATE TABLE IF NOT EXISTS %1 ("
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            "alarm_content TEXT NOT NULL, "
+                            "alarm_status_change_time DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                            "alarm_info TEXT)")
+                .arg(dbMap[DB_AlarmInfo]);
+        break;
+    case DB_GunMoveInfo:
+        createCmd = QString("CREATE TABLE IF NOT EXISTS %1 ("
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            "barrel_direction REAL NOT NULL, "
+                            "elevation_angle REAL NOT NULL, "
+                            "chassis_roll_angle REAL NOT NULL, "
+                            "chassis_pitch_angle REAL NOT NULL, "
+                            "status_change_time DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                            "auto_move_status INTEGER NOT NULL)")
+                .arg(dbMap[DB_GunMoveInfo]);
+        break;
+    case DB_GunShootInfo:
+        createCmd = QString( "CREATE TABLE IF NOT EXISTS %1 ("
+                             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                             "barrel_direction REAL NOT NULL, "
+                             "elevation_angle REAL NOT NULL, "
+                             "chassis_roll_angle REAL NOT NULL, "
+                             "chassis_pitch_angle REAL NOT NULL, "
+                             "status_change_time DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                             "firing_signal_complete INTEGER NOT NULL, "
+                             "recoil_status INTEGER NOT NULL, "
+                             "muzzle_velocity_valid INTEGER NOT NULL, "
+                             "charge_temperature REAL, "
+                             "muzzle_velocity REAL)")
+                .arg(dbMap[DB_GunShootInfo]);
         break;
     default:
         break;
@@ -157,218 +163,389 @@ void DbManipulation::createTable(int index)
             qDebug()<<"creat table failed:"<<dbMap[index]<<query.lastError();
         }
 }
-//表格内插入数据
-//target_data表格插入数据
+
 /******************************************************************
  *数据库操作
  *插入数据
 *****************************************************************/
-
-////插入侦察区域数据
-//bool DbManipulation:: insertTaskReconPointsData(const ITask_ReconData &Recontask) {
-//    QString tableName=dbMap[DB_TaskReconPoints];
-//    if(openDb()&&isTableExist(tableName))
-//    {
-//        QSqlQuery query;
-//        foreach(IXYHCoorData coorData,Recontask.taskPoints.multiPointCoor)
-//        {
-//            query.prepare(QString("INSERT INTO %1 (taskId, pointNum, posType ,X , Y , H )"
-//                                  "VALUES (:taskId, :pointNum, :posType ,:X , :Y , :H)").arg(tableName));
-//            query.bindValue(":taskId", Recontask.taskData.taskId);
-//            query.bindValue(":pointNum", Recontask.taskPoints.pointNum);
-//            query.bindValue(":posType", coorData.type);
-//            query.bindValue(":X", coorData.x);
-//            query.bindValue(":Y", coorData.y);
-//            query.bindValue(":H", coorData.h);
-//            // 执行插入
-//            if (!query.exec()) {
-//                qDebug() << "Error inserting data:" << query.lastError();
-//                return false;
-//            } else {
-//                qDebug() << "Data inserted successfully!";
-//            }
-//        }
-//    }
-//    return true;
-//}
-
-
-
-bool DbManipulation::insertCommandReconTask(QString taskID, int taskType, const QByteArray &taskData) {
-    QString tableName = dbMap[DB_CommandTask];
-    qDebug() << "Is table exist: " << isTableExist(tableName);
-    qDebug() << "Table name: " << tableName;
-    qDebug() << "Open database: " << openDb();
-
-
-    if (openDb() && isTableExist(tableName))
-    {
-        QSqlQuery query;
-        query.prepare(QString("INSERT INTO %1 (taskId, taskType, taskData) "
-                              "VALUES (:taskId, :taskType, :taskData)").arg(tableName));
-
-        query.bindValue(":taskId", taskID);
-        query.bindValue(":taskType", taskType);
-        query.bindValue(":taskData", taskData);
-
-        if (!query.exec()) {
-            qDebug() << "Error inserting data:" << query.lastError();
-            return false;
-        } else {
-            qDebug() << "Data inserted successfully!";
-            return true;
-        }
-    }
-    return false;
+bool DbManipulation::insertDeviceName(const DeviceName& deviceName) {
+    QSqlQuery query(database);
+    query.prepare(QString("INSERT INTO %1 (device_id, device_name) VALUES (:device_id, :device_name)").arg(dbMap[DB_Equ_Name]));
+    query.bindValue(":device_id", deviceName.deviceAddress);
+    query.bindValue(":device_name", deviceName.deviceName);
+    return query.exec();
 }
 
-/******************************************************************
- *数据库操作
- *删除数据
-*****************************************************************/
-//表格内删除数据
-bool DbManipulation::deleteData(int index, QString id){
-    bool res=false;
-    if(openDb()&&isTableExist(dbMap[index]))
-    {
-        QSqlQuery query(database);
-        QString delcmd;
-        switch (index) {
-        case DB_target_data:
-            delcmd = QString("delete from %1 where targetId='%2';").arg(dbMap[index]).arg(id);
-            res=query.exec(delcmd);
-            break;
-        case DB_reconTask_data:
-            delcmd = QString("delete from %1 where taskId='%2';").arg(dbMap[index]).arg(id);
-            res=query.exec(delcmd);
-            break;
-        case DB_Equ_Ability:
-            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
-            res=query.exec(delcmd);
-            break;
-        case DB_Equ_WorkStat:
-            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
-            res=query.exec(delcmd);
-            break;
-        case DB_TaskReconPoints:
-            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
-            res=query.exec(delcmd);
-            break;
-        }
-    }
-    if(!res)
-        qDebug()<<"dele data failed:"<<query.lastError();
-    return res;
+
+bool DbManipulation::insertDeviceStatusInfo(const DeviceStatusInfo& statusInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("INSERT INTO %1 (device_id, timestamp, status, error_code) VALUES (:device_id, :timestamp, :status, :error_code)")
+                  .arg(dbMap[DB_Equ_WorkStat]));
+
+    query.bindValue(":device_id", statusInfo.deviceStatus.deviceAddress);
+
+    // 将 LongDateTime 转换为 QDateTime
+    QDateTime timestamp(TimeFormatTrans::TimeFormatTrans::getDateTime(statusInfo.dateTime));
+    query.bindValue(":timestamp", timestamp);
+
+    query.bindValue(":status", statusInfo.deviceStatus.Status);
+
+    // 将故障信息数组转换为 QByteArray
+    query.bindValue(":error_code", QByteArray(reinterpret_cast<const char*>(statusInfo.deviceStatus.faultInfo), sizeof(statusInfo.deviceStatus.faultInfo)));
+
+    return query.exec();
 }
+
+bool DbManipulation::insertDeviceErrorInfo(const DeviceErrorInfo& errorInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("INSERT INTO %1 (stat_id, error_info) VALUES (:stat_id, :error_info)").arg(dbMap[DB_Equ_ErrorInfo]));
+    query.bindValue(":stat_id", errorInfo.statId);
+    query.bindValue(":error_info", errorInfo.errorInfo);
+    return query.exec();
+}
+
+bool DbManipulation::insertDeviceTotalWorkTime(const DeviceTotalWorkTime& workTimeInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("INSERT INTO %1 (device_id, total_worktime) VALUES (:device_id, :total_worktime)")
+                  .arg(dbMap[DB_Equ_TotalWorkTime]));
+
+    query.bindValue(":device_id", workTimeInfo.deviceId);
+    query.bindValue(":total_worktime", workTimeInfo.totalWorkTime);
+
+    return query.exec();
+}
+
+bool DbManipulation::insertAlarmInfo(const AlarmInfo& alarmInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("INSERT INTO %1 (alarmContent, statusChangeTime, alarmDetails) VALUES (:alarmContent, :statusChangeTime, :alarmDetails)").arg(dbMap[DB_AlarmInfo]));
+    query.bindValue(":alarmContent", alarmInfo.alarmContent);
+    query.bindValue(":statusChangeTime", QDateTime(TimeFormatTrans::TimeFormatTrans::getDateTime(alarmInfo.statusChangeTime)));
+    query.bindValue(":alarmDetails", alarmInfo.alarmDetails);
+    return query.exec();
+}
+
+bool DbManipulation::insertGunMoveData(const GunMoveData& gunMoveData) {
+    QSqlQuery query(database);
+    query.prepare(QString("INSERT INTO %1 (barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, autoAdjustmentStatus) "
+                          "VALUES (:barrelDirection, :elevationAngle, :chassisRoll, :chassisPitch, :statusChangeTime, :autoAdjustmentStatus)").arg(dbMap[DB_GunMoveInfo]));
+    query.bindValue(":barrelDirection", gunMoveData.barrelDirection);
+    query.bindValue(":elevationAngle", gunMoveData.elevationAngle);
+    query.bindValue(":chassisRoll", gunMoveData.chassisRoll);
+    query.bindValue(":chassisPitch", gunMoveData.chassisPitch);
+    query.bindValue(":statusChangeTime", QDateTime(TimeFormatTrans::TimeFormatTrans::getDateTime(gunMoveData.statusChangeTime)));
+    query.bindValue(":autoAdjustmentStatus", gunMoveData.autoAdjustmentStatus);
+    return query.exec();
+}
+
+bool DbManipulation::insertGunFiringData(const GunFiringData& gunFiringData) {
+    QSqlQuery query(database);
+    query.prepare(QString("INSERT INTO %1 (barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, firingCompletedSignal, recoilStatus, muzzleVelocityValid, propellantTemperature, muzzleVelocity) "
+                          "VALUES (:barrelDirection, :elevationAngle, :chassisRoll, :chassisPitch, :statusChangeTime, :firingCompletedSignal, :recoilStatus, :muzzleVelocityValid, :propellantTemperature, :muzzleVelocity)").arg(dbMap[DB_GunShootInfo]));
+    query.bindValue(":barrelDirection", gunFiringData.barrelDirection);
+    query.bindValue(":elevationAngle", gunFiringData.elevationAngle);
+    query.bindValue(":chassisRoll", gunFiringData.chassisRoll);
+    query.bindValue(":chassisPitch", gunFiringData.chassisPitch);
+    query.bindValue(":statusChangeTime", QDateTime(TimeFormatTrans::TimeFormatTrans::getDateTime(gunFiringData.statusChangeTime)));
+    query.bindValue(":firingCompletedSignal", gunFiringData.firingCompletedSignal);
+    query.bindValue(":recoilStatus", gunFiringData.recoilStatus);
+    query.bindValue(":muzzleVelocityValid", gunFiringData.muzzleVelocityValid);
+    query.bindValue(":propellantTemperature", gunFiringData.propellantTemperature);
+    query.bindValue(":muzzleVelocity", gunFiringData.muzzleVelocity);
+    return query.exec();
+}
+
+
+
 /******************************************************************
  *数据库操作
  *更新数据
 *****************************************************************/
-//表格target_data更新数据
+bool DbManipulation::updateDeviceStatusInfo(const DeviceStatusInfo& statusInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("UPDATE %1 SET timestamp = :timestamp, status = :status, error_code = :error_code WHERE device_id = :device_id")
+                  .arg(dbMap[DB_Equ_WorkStat]));
 
+    query.bindValue(":device_id", statusInfo.deviceStatus.deviceAddress);
 
-void DbManipulation::updateTargetData(int id, const QString &fieldName, const QString &fieldValue) {
-    QSqlQuery query;
-    QString strSQL=QString("UPDATE target_data SET %1 = :fieldValue WHERE id = :id").arg(fieldName);
-    query.prepare(strSQL);
-    query.bindValue(":fieldValue", fieldValue);
-    query.bindValue(":id", id);
+    // 将 LongDateTime 转换为 QDateTime
+    query.bindValue(":timestamp", TimeFormatTrans::TimeFormatTrans::getDateTime(statusInfo.dateTime));
+    query.bindValue(":status", statusInfo.deviceStatus.Status);
+    // 将故障信息数组转换为 QByteArray
+    query.bindValue(":error_code", QByteArray(reinterpret_cast<const char*>(statusInfo.deviceStatus.faultInfo), sizeof(statusInfo.deviceStatus.faultInfo)));
+    return query.exec();
+}
+bool DbManipulation::updateDeviceErrorInfo(const DeviceErrorInfo& errorInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("UPDATE %1 SET error_info = :error_info WHERE stat_id = :stat_id")
+                  .arg(dbMap[DB_Equ_ErrorInfo]));
 
-    if (!query.exec()) {
-        qDebug() << "Error updating data:" << query.lastError();
-    } else {
-        qDebug() << "Updated successfully!";
-    }
+    query.bindValue(":error_info", errorInfo.errorInfo);
+    query.bindValue(":stat_id", errorInfo.statId);
+
+    return query.exec();
+}
+
+bool DbManipulation::updateDeviceTotalWorkTime(const DeviceTotalWorkTime& workTimeInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("UPDATE %1 SET total_worktime = :total_worktime WHERE device_id = :device_id")
+                  .arg(dbMap[DB_Equ_TotalWorkTime]));
+
+    query.bindValue(":total_worktime", workTimeInfo.totalWorkTime);
+    query.bindValue(":device_id", workTimeInfo.deviceId);
+
+    return query.exec();
 }
 
 
-//bool DbManipulation::updateTaskReconPointsData(const ITask_ReconData &Recontask) {
-//    QString tableName = dbMap[DB_TaskReconPoints];
-//    if (openDb() && isTableExist(tableName)) {
-//        QSqlQuery query;
+bool DbManipulation::updateAlarmInfo(const AlarmInfo& alarmInfo) {
+    QSqlQuery query(database);
+    query.prepare(QString("UPDATE %1 SET statusChangeTime = :statusChangeTime, alarmDetails = :alarmDetails WHERE alarmContent = :alarmContent")
+                  .arg(dbMap[DB_AlarmInfo]));
 
-//        // 开始事务
-//        QSqlDatabase::database().transaction();
+    query.bindValue(":statusChangeTime", QDateTime(TimeFormatTrans::TimeFormatTrans::getDateTime(alarmInfo.statusChangeTime)));
+    query.bindValue(":alarmDetails", alarmInfo.alarmDetails);
+    query.bindValue(":alarmContent", alarmInfo.alarmContent);
 
-//        // 删除所有相同taskId的数据
-//        query.prepare(QString("DELETE FROM %1 WHERE taskId = :taskId").arg(tableName));
-//        query.bindValue(":taskId", Recontask.taskData.taskId);
-//        if (!query.exec()) {
-//            qDebug() << "Error deleting data:" << query.lastError();
-//            // 回滚事务
-//            QSqlDatabase::database().rollback();
-//            return false;
-//        }
+    return query.exec();
+}
 
-//        // 插入新数据
-//        foreach (IXYHCoorData coorData, Recontask.taskPoints.multiPointCoor) {
-//            query.prepare(QString("INSERT INTO %1 (taskId, pointNum, posType ,X , Y , H )"
-//                                  "VALUES (:taskId, :pointNum, :posType ,:X , :Y , :H)").arg(tableName));
-//            query.bindValue(":taskId", Recontask.taskData.taskId);
-//            query.bindValue(":pointNum", Recontask.taskPoints.pointNum);
-//            query.bindValue(":posType", coorData.type);
-//            query.bindValue(":X", coorData.x);
-//            query.bindValue(":Y", coorData.y);
-//            query.bindValue(":H", coorData.h);
-//            // 执行插入
-//            if (!query.exec()) {
-//                qDebug() << "Error inserting data:" << query.lastError();
-//                // 回滚事务
-//                QSqlDatabase::database().rollback();
-//                return false;
-//            }
-//        }
-//        // 提交事务
-//        QSqlDatabase::database().commit();
-//        return true;
-//    }
-//    return false;
-//}
 
-bool DbManipulation::updateCommandReconTask(QString taskID, int newTaskType, const QByteArray &newTaskData) {
-    QString tableName = dbMap[DB_CommandTask];
-    if (openDb() && isTableExist(tableName)) {
-        QSqlQuery query;
-        query.prepare(QString("UPDATE %1 SET taskType = :newTaskType, taskData = :newTaskData "
-                              "WHERE taskID = :taskID").arg(tableName));
+bool DbManipulation::updateGunMoveData(const GunMoveData& gunMoveData) {
+    QSqlQuery query(database);
+    query.prepare(QString("UPDATE %1 SET elevationAngle = :elevationAngle, chassisRoll = :chassisRoll, chassisPitch = :chassisPitch, statusChangeTime = :statusChangeTime, autoAdjustmentStatus = :autoAdjustmentStatus WHERE barrelDirection = :barrelDirection").arg(dbMap[DB_GunMoveInfo]));
+    query.bindValue(":elevationAngle", gunMoveData.elevationAngle);
+    query.bindValue(":chassisRoll", gunMoveData.chassisRoll);
+    query.bindValue(":chassisPitch", gunMoveData.chassisPitch);
+    query.bindValue(":statusChangeTime", TimeFormatTrans::TimeFormatTrans::getDateTime(gunMoveData.statusChangeTime));
+    query.bindValue(":autoAdjustmentStatus", gunMoveData.autoAdjustmentStatus);
+    query.bindValue(":barrelDirection", gunMoveData.barrelDirection);
+    return query.exec();
+}
 
-        query.bindValue(":newTaskType", newTaskType);
-        query.bindValue(":newTaskData", newTaskData);
-        query.bindValue(":taskID", taskID);
-
-        if (!query.exec()) {
-            qDebug() << "Error updating data:" << query.lastError();
-            return false;
-        } else {
-            qDebug() << "Data updated successfully!";
-            return true;
-        }
-    }
-    return false;
+bool DbManipulation::updateGunFiringData(const GunFiringData& gunFiringData) {
+    QSqlQuery query(database);
+    query.prepare(QString("UPDATE %1 SET elevationAngle = :elevationAngle, chassisRoll = :chassisRoll, chassisPitch = :chassisPitch, statusChangeTime = :statusChangeTime, firingCompletedSignal = :firingCompletedSignal, recoilStatus = :recoilStatus, muzzleVelocityValid = :muzzleVelocityValid, propellantTemperature = :propellantTemperature, muzzleVelocity = :muzzleVelocity WHERE barrelDirection = :barrelDirection").arg(dbMap[DB_GunShootInfo]));
+    query.bindValue(":elevationAngle", gunFiringData.elevationAngle);
+    query.bindValue(":chassisRoll", gunFiringData.chassisRoll);
+    query.bindValue(":chassisPitch", gunFiringData.chassisPitch);
+    query.bindValue(":statusChangeTime", TimeFormatTrans::TimeFormatTrans::getDateTime(gunFiringData.statusChangeTime));
+    query.bindValue(":firingCompletedSignal", gunFiringData.firingCompletedSignal);
+    query.bindValue(":recoilStatus", gunFiringData.recoilStatus);
+    query.bindValue(":muzzleVelocityValid", gunFiringData.muzzleVelocityValid);
+    query.bindValue(":propellantTemperature", gunFiringData.propellantTemperature);
+    query.bindValue(":muzzleVelocity", gunFiringData.muzzleVelocity);
+    query.bindValue(":barrelDirection", gunFiringData.barrelDirection);
+    return query.exec();
 }
 
 /******************************************************************
  *数据库操作
  *查询数据
 *****************************************************************/
-//查询表格数据
+QList<DeviceName> DbManipulation::getDeviceNames() {
+    QList<DeviceName> deviceList;
+    QSqlQuery query(database);
+    query.prepare(QString("SELECT device_id, device_name FROM %1").arg(dbMap[DB_Equ_Name]));
 
-
-QByteArray DbManipulation::fetchCommandReconTaskData(QString taskID) {
-    QByteArray taskData;
-    QString tableName = dbMap[DB_CommandTask];
-    if (openDb() && isTableExist(tableName)) {
-        QSqlQuery query;
-        query.prepare(QString("SELECT taskData FROM %1 WHERE taskId = :taskId").arg(tableName));
-        query.bindValue(":taskId", taskID);
-
-        if (query.exec() && query.next()) {
-            taskData = query.value("taskData").toByteArray();
-        } else {
-            qDebug() << "Error fetching data:" << query.lastError();
+    if (query.exec()) {
+        while (query.next()) {
+            DeviceName device;
+            device.deviceAddress = query.value(0).toUInt();  // 获取 device_id
+            device.deviceName = query.value(1).toString();   // 获取 device_name
+            deviceList.append(device);
         }
+    } else {
+        qDebug() << "Query failed:" << query.lastError();
     }
-    return taskData;
+
+    return deviceList;
+}
+
+QList<DeviceStatusInfo> DbManipulation::getDeviceStatusInfos(const TimeCondition *timeCondition) {
+    QList<DeviceStatusInfo> statusList;
+    QSqlQuery query(database);
+    QString queryString = QString("SELECT device_id, timestamp, status, error_code FROM %1").arg(dbMap[DB_Equ_WorkStat]);
+
+    if (timeCondition && timeCondition->startTime.isValid() && timeCondition->endTime.isValid()) {
+        queryString += " WHERE timestamp BETWEEN :startTime AND :endTime";
+        query.prepare(queryString);
+        query.bindValue(":startTime", timeCondition->startTime);
+        query.bindValue(":endTime", timeCondition->endTime);
+    } else {
+        query.prepare(queryString);
+    }
+
+    if (query.exec()) {
+        while (query.next()) {
+            DeviceStatusInfo statusInfo;
+            statusInfo.deviceStatus.deviceAddress = query.value(0).toUInt();  // 获取 device_id
+
+            // 将 QDateTime 转换为 LongDateTime
+            QDateTime timestamp = query.value(1).toDateTime();
+            statusInfo.dateTime = TimeFormatTrans::getLongDataTime(timestamp);
+            statusInfo.deviceStatus.Status = query.value(2).toUInt();  // 获取 status
+
+            // 获取故障信息并转换为 quint8 数组
+            QByteArray errorCodeArray = query.value(3).toByteArray();
+            memcpy(statusInfo.deviceStatus.faultInfo, errorCodeArray.constData(), sizeof(statusInfo.deviceStatus.faultInfo));
+
+            statusList.append(statusInfo);
+        }
+    } else {
+        qDebug() << "Query failed:" << query.lastError();
+    }
+
+    return statusList;
+}
+
+QList<DeviceErrorInfo> DbManipulation::getDeviceErrorInfos(int statId) {
+    QList<DeviceErrorInfo> errorList;
+    QSqlQuery query(database);
+    query.prepare(QString("SELECT stat_id, error_info FROM %1 WHERE stat_id = :stat_id").arg(dbMap[DB_Equ_ErrorInfo]));
+    query.bindValue(":stat_id", statId);
+
+    if (query.exec()) {
+        while (query.next()) {
+            DeviceErrorInfo errorInfo;
+            errorInfo.statId = query.value(0).toInt();         // 获取 stat_id
+            errorInfo.errorInfo = query.value(1).toString();   // 获取 error_info
+            errorList.append(errorInfo);
+        }
+    } else {
+        qDebug() << "Query failed:" << query.lastError();
+    }
+
+    return errorList;
+}
+QList<DeviceTotalWorkTime> DbManipulation::getDeviceTotalWorkTimes(int deviceId) {
+    QList<DeviceTotalWorkTime> workTimeList;
+    QSqlQuery query(database);
+    query.prepare(QString("SELECT device_id, total_worktime FROM %1 WHERE device_id = :device_id").arg(dbMap[DB_Equ_TotalWorkTime]));
+    query.bindValue(":device_id", deviceId);
+
+    if (query.exec()) {
+        while (query.next()) {
+            DeviceTotalWorkTime workTimeInfo;
+            workTimeInfo.deviceId = query.value(0).toInt();          // 获取 device_id
+            workTimeInfo.totalWorkTime = query.value(1).toInt();     // 获取 total_worktime
+            workTimeList.append(workTimeInfo);
+        }
+    } else {
+        qDebug() << "Query failed:" << query.lastError();
+    }
+
+    return workTimeList;
+}
+
+QList<AlarmInfo> DbManipulation::getAlarmInfos(const TimeCondition *timeCondition) {
+    QList<AlarmInfo> alarmList;
+    QSqlQuery query(database);
+    QString queryString = QString("SELECT alarmContent, statusChangeTime, alarmDetails FROM %1").arg(dbMap[DB_AlarmInfo]);
+
+    if (timeCondition && timeCondition->startTime.isValid() && timeCondition->endTime.isValid()) {
+        queryString += " WHERE statusChangeTime BETWEEN :startTime AND :endTime";
+        query.prepare(queryString);
+        query.bindValue(":startTime", timeCondition->startTime);
+        query.bindValue(":endTime", timeCondition->endTime);
+    } else {
+        query.prepare(queryString);
+    }
+
+    if (query.exec()) {
+        while (query.next()) {
+            AlarmInfo alarmInfo;
+            alarmInfo.alarmContent = query.value(0).toUInt();  // 获取 alarmContent
+
+            // 将 QDateTime 转换为 LongDateTime
+            QDateTime timestamp = query.value(1).toDateTime();
+            alarmInfo.statusChangeTime = TimeFormatTrans::getLongDataTime(timestamp);
+            alarmInfo.alarmDetails = query.value(2).toUInt();  // 获取 alarmDetails
+
+            alarmList.append(alarmInfo);
+        }
+    } else {
+        qDebug() << "Query failed:" << query.lastError();
+    }
+    return alarmList;
+}
+
+QList<GunMoveData> DbManipulation::getGunMoveData(const TimeCondition *timeCondition) {
+    QList<GunMoveData> gunMoveList;
+    QSqlQuery query(database);
+    QString queryString = QString("SELECT barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, autoAdjustmentStatus FROM %1")
+            .arg(dbMap[DB_GunMoveInfo]);
+
+    if (timeCondition && timeCondition->startTime.isValid() && timeCondition->endTime.isValid()) {
+        queryString += " WHERE statusChangeTime BETWEEN :startTime AND :endTime";
+        query.prepare(queryString);
+        query.bindValue(":startTime", timeCondition->startTime);
+        query.bindValue(":endTime", timeCondition->endTime);
+    } else {
+        query.prepare(queryString);
+    }
+
+    if (query.exec()) {
+        while (query.next()) {
+            GunMoveData gunMoveData;
+            gunMoveData.barrelDirection = query.value(0).toUInt();  // 获取 barrelDirection
+            gunMoveData.elevationAngle = query.value(1).toUInt();   // 获取 elevationAngle
+            gunMoveData.chassisRoll = query.value(2).toUInt();      // 获取 chassisRoll
+            gunMoveData.chassisPitch = query.value(3).toUInt();     // 获取 chassisPitch
+
+            // 将 QDateTime 转换为 LongDateTime
+            QDateTime timestamp = query.value(4).toDateTime();
+            gunMoveData.statusChangeTime = TimeFormatTrans::getLongDataTime(timestamp);
+            gunMoveData.autoAdjustmentStatus = query.value(5).toUInt(); // 获取 autoAdjustmentStatus
+
+            gunMoveList.append(gunMoveData);
+        }
+    } else {
+        qDebug() << "Query failed:" << query.lastError();
+    }
+
+    return gunMoveList;
+}
+
+QList<GunFiringData> DbManipulation::getGunFiringData(const TimeCondition *timeCondition) {
+    QList<GunFiringData> gunFiringList;
+    QSqlQuery query(database);
+    QString queryString = QString("SELECT barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, "
+                                  "firingCompletedSignal, recoilStatus, muzzleVelocityValid, propellantTemperature, muzzleVelocity FROM %1")
+            .arg(dbMap[DB_GunShootInfo]);
+
+    if (timeCondition && timeCondition->startTime.isValid() && timeCondition->endTime.isValid()) {
+        queryString += " WHERE statusChangeTime BETWEEN :startTime AND :endTime";
+        query.prepare(queryString);
+        query.bindValue(":startTime", timeCondition->startTime);
+        query.bindValue(":endTime", timeCondition->endTime);
+    } else {
+        query.prepare(queryString);
+    }
+
+    if (query.exec()) {
+        while (query.next()) {
+            GunFiringData gunFiringData;
+            gunFiringData.barrelDirection = query.value(0).toUInt();  // 获取 barrelDirection
+            gunFiringData.elevationAngle = query.value(1).toUInt();   // 获取 elevationAngle
+            gunFiringData.chassisRoll = query.value(2).toUInt();      // 获取 chassisRoll
+            gunFiringData.chassisPitch = query.value(3).toUInt();     // 获取 chassisPitch
+
+            // 将 QDateTime 转换为 LongDateTime
+            QDateTime timestamp = query.value(4).toDateTime();
+            gunFiringData.statusChangeTime = TimeFormatTrans::getLongDataTime(timestamp);
+            gunFiringData.firingCompletedSignal = query.value(5).toUInt();   // 获取 firingCompletedSignal
+            gunFiringData.recoilStatus = query.value(6).toUInt();            // 获取 recoilStatus
+            gunFiringData.muzzleVelocityValid = query.value(7).toUInt();     // 获取 muzzleVelocityValid
+            gunFiringData.propellantTemperature = query.value(8).toUInt();   // 获取 propellantTemperature
+            gunFiringData.muzzleVelocity = query.value(9).toUInt();          // 获取 muzzleVelocity
+
+            gunFiringList.append(gunFiringData);
+        }
+    } else {
+        qDebug() << "Query failed:" << query.lastError();
+    }
+
+    return gunFiringList;
 }
 
 /******************************************************************
@@ -431,5 +608,48 @@ QByteArray DbManipulation::fetchCommandReconTaskData(QString taskID) {
 //}
 
 
+
+/******************************************************************
+ *数据库操作
+ *删除数据
+*****************************************************************/
+//表格内删除数据
+bool DbManipulation::deleteData(int index, QString id){
+    bool res=false;
+    QString delcmd;
+    if(openDb()&&isTableExist(dbMap[index]))
+    {
+        QSqlQuery query(database);
+
+        switch (index) {
+        case DB_Equ_Name:
+            delcmd = QString("delete from %1 where device_id='%2';").arg(dbMap[index]).arg(id);
+            break;
+        case DB_Equ_WorkStat:
+            delcmd = QString("delete from %1 where stat_id='%2';").arg(dbMap[index]).arg(id);
+            break;
+        case DB_Equ_ErrorInfo:
+            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
+            break;
+        case DB_Equ_TotalWorkTime:
+            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
+            break;
+        case DB_AlarmInfo:
+            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
+            break;
+        case DB_GunMoveInfo:
+            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
+            break;
+        case DB_GunShootInfo:
+            delcmd = QString("delete from %1 where id='%2';").arg(dbMap[index]).arg(id);
+            break;
+        }
+    }
+    if(delcmd!="")
+        res=query.exec(delcmd);
+    if(!res)
+        qDebug()<<"dele data failed:"<<query.lastError();
+    return res;
+}
 
 

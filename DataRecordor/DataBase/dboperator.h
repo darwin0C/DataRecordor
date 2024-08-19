@@ -9,17 +9,45 @@
 class DbOperator : public QObject
 {
     Q_OBJECT
-
+    DbManipulation dbManipulation;
 public:
     explicit DbOperator(QObject *parent = nullptr) ;
 
+    static DbOperator *Get()
+    {
+        static DbOperator vt;
+        return &vt;
+    }
+    // 删除拷贝构造函数和赋值操作符，防止对象拷贝
+    DbOperator(const DbOperator&) = delete;
+    DbOperator& operator=(const DbOperator&) = delete;
 
-    bool DeleteTaskData(QString id) ;
-    bool DeleteEquAbilityData(QString id) ;
     bool DeleteEquStatData(QString id) ;
-    bool DeleteTarData(QString id) ;
 
+    bool insertAlarmInfo(const AlarmInfo &alarmInfo);
+    bool insertGunMoveData(const GunMoveData &gunMoveData);
+    bool insertGunFiringData(const GunFiringData &gunFiringData);
+    bool insertDeviceName(const DeviceName &deviceName);
+    bool insertDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
+    bool insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
+    bool insertDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
 
+    bool updateAlarmInfo(const AlarmInfo &alarmInfo);
+    bool updateGunMoveData(const GunMoveData &gunMoveData);
+    bool updateGunFiringData(const GunFiringData &gunFiringData);
+    bool updateDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
+    bool updateDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
+    bool updateDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
+
+    QList<DeviceName> getDeviceNames();
+    QList<DeviceErrorInfo> getDeviceErrorInfos(int statId);
+    QList<DeviceTotalWorkTime> getDeviceTotalWorkTimes(int deviceId);
+    QList<GunMoveData> getGunMoveData(const TimeCondition *timeCondition);
+    QList<DeviceStatusInfo> getDeviceStatusInfos(const TimeCondition *timeCondition);
+    QList<AlarmInfo> getAlarmInfos(const TimeCondition *timeCondition);
+    QList<GunFiringData> getGunFiringData(const TimeCondition *timeCondition);
+
+    bool deleteData(int index, QString id);
 signals:
 
 };

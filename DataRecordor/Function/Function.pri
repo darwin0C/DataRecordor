@@ -1,4 +1,4 @@
-QT       += core  network sql
+QT       += core  network sql xml
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -21,9 +21,11 @@ INCLUDEPATH += $$PWD
 
 HEADERS += \
     $$PWD/DeviceData.h \
+    $$PWD/DeviceManager.h \
     $$PWD/devicestat.h
 
 SOURCES += \
+    $$PWD/DeviceManager.cpp \
     $$PWD/devicestat.cpp
 
 

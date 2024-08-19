@@ -4,6 +4,9 @@
 #include <QStringList>
 #include <QDataStream>
 const QString DBDATEFileName="/data/dataBase.db" ; //数据库存储文件
+const QString DeviceNameFile="/settings/deviceName.xml" ; //设备名称
+const QString DeviceStat_CANDataFile="/settings/CAN_DeviceStat.xml" ; //总线协议
+
 #pragma pack(1)  //内存1字节对齐
 
 

@@ -7,7 +7,7 @@
 #include <QSqlError>
 #include "dbDatas.h"
 #include "data.h"
-
+#include "DeviceData.h"
 
 class TimeCondition
 {
@@ -24,13 +24,8 @@ class DbManipulation
 {
 
 public:
-    static DbManipulation *Get()
-    {
-        static DbManipulation vt;
-        return &vt;
-    }
-    QMap<int,QString> dbMap;
 
+    QMap<int,QString> dbMap;
     DbManipulation();
     ~DbManipulation();
     void initial(QString path);
@@ -41,19 +36,32 @@ public:
     bool isTableExist(QString tableName);
     void createTable(int index);
 
+    bool insertAlarmInfo(const AlarmInfo &alarmInfo);
+    bool insertGunMoveData(const GunMoveData &gunMoveData);
+    bool insertGunFiringData(const GunFiringData &gunFiringData);
+    bool insertDeviceName(const DeviceName &deviceName);
+    bool insertDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
+    bool insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
+    bool insertDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
+
+    bool updateAlarmInfo(const AlarmInfo &alarmInfo);
+    bool updateGunMoveData(const GunMoveData &gunMoveData);
+    bool updateGunFiringData(const GunFiringData &gunFiringData);
+    bool updateDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
+    bool updateDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
+    bool updateDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
+
+    QList<DeviceName> getDeviceNames();
+    QList<DeviceErrorInfo> getDeviceErrorInfos(int statId);
+    QList<DeviceTotalWorkTime> getDeviceTotalWorkTimes(int deviceId);
+    QList<GunMoveData> getGunMoveData(const TimeCondition *timeCondition=nullptr);
+    QList<DeviceStatusInfo> getDeviceStatusInfos(const TimeCondition *timeCondition=nullptr);
+    QList<AlarmInfo> getAlarmInfos(const TimeCondition *timeCondition=nullptr);
+    QList<GunFiringData> getGunFiringData(const TimeCondition *timeCondition=nullptr);
+
     bool deleteData(int index, QString id);
-
-    void updateTargetData(int id, const QString &fieldName, const QString &fieldValue);
-
-
-    bool insertCommandReconTask(QString taskID, int taskType, const QByteArray &taskData);
-    bool updateCommandReconTask(QString taskID, int newTaskType, const QByteArray &newTaskData);
-    QByteArray fetchCommandReconTaskData(QString taskID);
-
 private:
     bool isDbInited=false;
-
-
 };
 
 #endif // DBMANIPULATION_H

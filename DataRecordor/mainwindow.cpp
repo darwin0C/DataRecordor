@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QDateTime>
 #include "MsgSignals.h"
-#include "devicestat.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     com=ComManager::instance();
-    DeviceStat deviceStat;
+    DeviceManager deviceManager;
     startRecord();
     startLEDThread();
     startStatus();

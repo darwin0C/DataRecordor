@@ -34,14 +34,12 @@ public:
     ~ComManager();
     int sendCanData(uint canID, uchar *buff, unsigned char len);
 
-
     // 获取单例实例
     static ComManager* instance()
     {
         static ComManager instance;  // 静态局部变量，程序运行期间只会初始化一次
         return &instance;
     }
-
     // 删除拷贝构造函数和赋值操作符，防止对象拷贝
     ComManager(const ComManager&) = delete;
     ComManager& operator=(const ComManager&) = delete;

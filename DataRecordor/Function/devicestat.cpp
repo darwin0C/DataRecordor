@@ -1,35 +1,49 @@
 #include "devicestat.h"
 
-#include <QDebug>
+
+const int MaxDisLinkTime=5;
+
 DeviceStat::DeviceStat(QObject *parent) : QObject(parent)
 {
+    mytimer=new QTimer();
+    connect(mytimer,SIGNAL(timeout()),this,SLOT(timerStatHandle()));
+    mytimer->start(1000);
 
-    canReader.readCanDataFromXml(canDataList,"D:/CAN.xml");
-    qDebug()<<"canDataList"<<canDataList.count();
-    getDeviceLists();
-    CanData data;
-    memset(&data,0xFF,sizeof(CanData));
-    data.len=8;
-    data.dataid=0x0CF1A148;
-    data.data[0]=0x0F;
-    processCanData(data);
-    qDebug()<<"11";
+    LinkCount=0;
+    DeviceLinkStat=Device_Stat_Init;
+    memset(&lastDeviceStat,0,sizeof (DeviceStatusInfo));
+    lastDeviceStat.dateTime=TimeFormatTrans::getLongDataTime(QDateTime::currentDateTime());
+
+    qRegisterMetaType<DeviceStatusInfo>("DeviceStatusInfo");//自定义类型需要先注册
 }
 
-
-void DeviceStat::processCanData(const CanData &data)
+void DeviceStat::refreshStat(const DeviceStatusInfo &Stat)
 {
-    if(!deviceList.contains(data.dataid))
-        return;
-    QMap<QString,CanDataValue> dataMap= canReader.getValues(data,canDataList);
-    qDebug()<<"dataMap"<<dataMap.count();
-}
-
-void DeviceStat::getDeviceLists()
-{
-    for(const CanDataFormat &device:canDataList)
+    LinkCount=0;
+    if(lastDeviceStat.deviceStatus.Status!=Stat.deviceStatus.Status)
     {
-        deviceList.append(device.id);
+        DeviceLinkStat=(Device_Stat)Stat.deviceStatus.Status;
+        memcpy(&lastDeviceStat,&Stat,sizeof (DeviceStatusInfo));
+        emit sig_StatChanged(lastDeviceStat);
     }
-    qDebug()<<"deviceList"<<deviceList.count();
+}
+
+void DeviceStat::timerStatHandle()
+{
+    if(DeviceLinkStat!=Device_Stat_DisLink)
+    {
+        LinkCount++;
+        if(LinkCount>MaxDisLinkTime)
+        {
+            DeviceLinkStat=Device_Stat_DisLink;
+            lastDeviceStat.deviceStatus.Status=Device_Stat_DisLink;
+            emit sig_StatChanged(lastDeviceStat);
+        }
+    }
+}
+
+//设备连接状态
+int DeviceStat::LinkStat()
+{
+    return DeviceLinkStat;
 }
