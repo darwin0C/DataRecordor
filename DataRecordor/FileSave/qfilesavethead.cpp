@@ -14,7 +14,7 @@ QFileSaveThead::QFileSaveThead(QObject *parent)
     m_nWritePos = 0;
     m_bOpen = false;
 
-    qDebug()<<"save file thread "<<isRunning();
+
     savTmr=new QTimer(this);
     connect(savTmr,SIGNAL(timeout()),this,SLOT(onTimeSaveFile()));
 
@@ -38,6 +38,7 @@ void QFileSaveThead::startRecord()
     m_bStop = false;
     start(QThread::TimeCriticalPriority);
     savTmr->start(2000);
+    qDebug()<<"save file thread "<<isRunning();
 }
 
 void QFileSaveThead::stopRecord()

@@ -41,7 +41,7 @@ public:
     bool insertGunFiringData(const GunFiringData &gunFiringData);
     bool insertDeviceName(const DeviceName &deviceName);
     bool insertDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
-    bool insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
+    int insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
     bool insertDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
 
     bool updateAlarmInfo(const AlarmInfo &alarmInfo);
@@ -50,6 +50,7 @@ public:
     bool updateDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
     bool updateDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
     bool updateDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
+    bool updateDeviceTotalWorkTimeAdd1Minute( int deviceId);
 
     QList<DeviceName> getDeviceNames();
     QList<DeviceErrorInfo> getDeviceErrorInfos(int statId);
@@ -60,6 +61,7 @@ public:
     QList<GunFiringData> getGunFiringData(const TimeCondition *timeCondition=nullptr);
 
     bool deleteData(int index, QString id);
+
 private:
     bool isDbInited=false;
 };

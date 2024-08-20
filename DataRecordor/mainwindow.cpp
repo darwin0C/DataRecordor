@@ -11,7 +11,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     com=ComManager::instance();
-    DeviceManager deviceManager;
     startRecord();
     startLEDThread();
     startStatus();

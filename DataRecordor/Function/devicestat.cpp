@@ -10,22 +10,25 @@ DeviceStat::DeviceStat(QObject *parent) : QObject(parent)
     mytimer->start(1000);
 
     LinkCount=0;
-    DeviceLinkStat=Device_Stat_Init;
+    DeviceLinkStat=Device_Stat_DisLink;
     memset(&lastDeviceStat,0,sizeof (DeviceStatusInfo));
     lastDeviceStat.dateTime=TimeFormatTrans::getLongDataTime(QDateTime::currentDateTime());
 
     qRegisterMetaType<DeviceStatusInfo>("DeviceStatusInfo");//自定义类型需要先注册
 }
 
-void DeviceStat::refreshStat(const DeviceStatusInfo &Stat)
+bool DeviceStat::refreshStat(const DeviceStatusInfo &Stat)
 {
     LinkCount=0;
+    recoardWorkTime(TimeFormatTrans::getDateTime(Stat.dateTime));
     if(lastDeviceStat.deviceStatus.Status!=Stat.deviceStatus.Status)
     {
         DeviceLinkStat=(Device_Stat)Stat.deviceStatus.Status;
         memcpy(&lastDeviceStat,&Stat,sizeof (DeviceStatusInfo));
-        emit sig_StatChanged(lastDeviceStat);
+        //emit sig_StatChanged(lastDeviceStat);
+        return true;
     }
+    return false;
 }
 
 void DeviceStat::timerStatHandle()
@@ -40,6 +43,27 @@ void DeviceStat::timerStatHandle()
             emit sig_StatChanged(lastDeviceStat);
         }
     }
+    else
+    {
+        isWorking=false;
+    }
+}
+
+void DeviceStat::recoardWorkTime(QDateTime endTime)
+{
+    if(!isWorking)
+    {
+        startTime=endTime;
+        isWorking=true;
+        return;
+    }
+    workTime+=startTime.secsTo(endTime);
+    startTime=endTime;
+    if(workTime>=60)
+    {
+        emit sig_WorkTimeRecord(lastDeviceStat.deviceAddress);
+        workTime=0;
+    }
 }
 
 //设备连接状态
@@ -47,3 +71,4 @@ int DeviceStat::LinkStat()
 {
     return DeviceLinkStat;
 }
+

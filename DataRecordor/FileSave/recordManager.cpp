@@ -12,18 +12,18 @@ QString RecordManager::getRecordData(SerialDataRev dataRev)
 
     QString date,time,can_id,can_data;
 
-    int year=dataRev.dateTime.year;
+    int year=dataRev.candata.dateTime.year;
 
     date = QString("%1_%2%3")
             .arg(year,4,10,QLatin1Char('0'))
-            .arg(dataRev.dateTime.month,2,10,QLatin1Char('0'))
-            .arg(dataRev.dateTime.day,2,10,QLatin1Char('0'));
+            .arg(dataRev.candata.dateTime.month,2,10,QLatin1Char('0'))
+            .arg(dataRev.candata.dateTime.day,2,10,QLatin1Char('0'));
 
     time = QString("%1:%2:%3.%4")
-            .arg(dataRev.dateTime.hour,2,10,QLatin1Char('0'))
-            .arg(dataRev.dateTime.minute,2,10,QLatin1Char('0'))
-            .arg(dataRev.dateTime.second,2,10,QLatin1Char('0'))
-            .arg(dataRev.dateTime.msec,3,10,QLatin1Char('0'));
+            .arg(dataRev.candata.dateTime.hour,2,10,QLatin1Char('0'))
+            .arg(dataRev.candata.dateTime.minute,2,10,QLatin1Char('0'))
+            .arg(dataRev.candata.dateTime.second,2,10,QLatin1Char('0'))
+            .arg(dataRev.candata.dateTime.msec,3,10,QLatin1Char('0'));
 
     can_id=QString("%1").arg(dataRev.candata.dataid,8,16,QLatin1Char('0'));
     QByteArray array((char *)dataRev.candata.data,8);

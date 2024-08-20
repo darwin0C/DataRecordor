@@ -8,6 +8,7 @@
 #include "data.h"
 #include "commanager.h"
 #include "DeviceManager.h"
+#include "EventInfo.h"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -34,6 +35,11 @@ private:
     QThread* ledTimerThread;
     QTimer *timerStatus;
     QThread* StatusTimerThread;
+
+    DeviceManager deviceManager;
+    EventInfo eventInfo;
+
+
     void sendData();
 
     void startRecord();

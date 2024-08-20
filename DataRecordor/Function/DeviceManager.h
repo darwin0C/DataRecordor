@@ -5,6 +5,7 @@
 #include "canmsgreader.h"
 #include "data.h"
 #include "dboperator.h"
+#include "devicestat.h"
 
 class DeviceManager : public QObject
 {
@@ -15,15 +16,21 @@ public:
 private:
     CanMsgReader canReader;
     QList<CanDataFormat> canDataList;
-    QList<int> deviceList;
+    //QList<int> deviceList;
+    QMap<int,DeviceStat*> devices;
     void getDeviceLists();
     DbOperator *dbOperator;
     bool loadAndInsertDevicesFromXml(const QString &xmlFilePath);
-    void saveDeviceStat(const QMap<QString, CanDataValue> &dataMap);
+    void saveDeviceStatSignals(int statID,const QMap<QString, CanDataValue> &dataMap);
     void test();
+    int saveStat(const DeviceStatusInfo &deviceIndo);
+
 signals:
 
 
+private slots:
+    void recordWorkTime(int deviceID);
+    void StatWorkChange(DeviceStatusInfo deviceInfo);
 };
 
 #endif // DEVICEMANAGER_H

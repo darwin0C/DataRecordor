@@ -22,10 +22,12 @@ INCLUDEPATH += $$PWD
 HEADERS += \
     $$PWD/DeviceData.h \
     $$PWD/DeviceManager.h \
+    $$PWD/EventInfo.h \
     $$PWD/devicestat.h
 
 SOURCES += \
     $$PWD/DeviceManager.cpp \
+    $$PWD/EventInfo.cpp \
     $$PWD/devicestat.cpp
 
 

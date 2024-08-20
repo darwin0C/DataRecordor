@@ -30,7 +30,7 @@ bool DbOperator::insertDeviceErrorInfo(const DeviceErrorInfo &errorInfo) {
     return dbManipulation.insertDeviceErrorInfo(errorInfo);
 }
 
-bool DbOperator::insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo) {
+int DbOperator::insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo) {
     return dbManipulation.insertDeviceStatusInfo(statusInfo);
 }
 
@@ -68,6 +68,9 @@ bool DbOperator::updateDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeIn
     return dbManipulation.updateDeviceTotalWorkTime(workTimeInfo);
 }
 
+bool DbOperator::updateDeviceWorkTimeAdd1Minute(int deviceID) {
+    return dbManipulation.updateDeviceTotalWorkTimeAdd1Minute(deviceID);
+}
 
 
 ///****************************************

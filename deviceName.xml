@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Devices>
+    <Device Address="0x68" Name="Gunner's Terminal"/>
+    <Device Address="0xC9" Name="Ventilation Unit"/>
+    <Device Address="0x69" Name="Satellite Positioning and Orientation Device"/>
+    <Device Address="0x49" Name="Inertial Navigation System"/>
+    <Device Address="0xA8" Name="Loader's Terminal"/>
+    <Device Address="0xCB" Name="Muzzle Velocity Radar"/>
+    <Device Address="0xCA" Name="Propellant Temperature Measuring Device"/>
+    <Device Address="0x36" Name="Guided Missile Loader"/>
+    <Device Address="0x7E" Name="Turret Power Distribution Box"/>
+    <Device Address="0x34" Name="Integrated Protection Control Box"/>
+    <Device Address="0x9E" Name="Health Management Unit"/>
+    <Device Address="0x89" Name="Bus Data Recorder"/>
+    <Device Address="0x8A" Name="Direct-viewing Scope"/>
+    <Device Address="0xC8" Name="Gunner's Handheld Terminal"/>
+    <Device Address="0x48" Name="Driver's Terminal"/>
+    <Device Address="0x29" Name="Fire Control Box"/>
+    <Device Address="0x26" Name="Gunner's Control Console"/>
+    <Device Address="0x21" Name="Azimuth Sensor"/>
+    <Device Address="0x22" Name="Elevation Sensor"/>
+    <Device Address="0x24" Name="Gun Control Box"/>
+    <Device Address="0x25" Name="Azimuth Servo Driver"/>
+</Devices>
