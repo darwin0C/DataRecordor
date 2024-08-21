@@ -44,7 +44,6 @@ bool QMyCom::initComInterface(const QString &port, int baud)
     return isOpen;
 }
 
-
 //关闭
 void QMyCom::closeComInterface()
 {

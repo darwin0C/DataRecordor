@@ -7,8 +7,8 @@
 #include <QDebug>
 #include "data.h"
 #include "commanager.h"
-#include "DeviceManager.h"
-#include "EventInfo.h"
+#include "CommandCtrol.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -35,10 +35,7 @@ private:
     QThread* ledTimerThread;
     QTimer *timerStatus;
     QThread* StatusTimerThread;
-
-    DeviceManager deviceManager;
-    EventInfo eventInfo;
-
+    CommandCtrol commandCtrol;
 
     void sendData();
 

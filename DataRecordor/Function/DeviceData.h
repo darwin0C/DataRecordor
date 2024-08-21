@@ -51,14 +51,13 @@ typedef struct
 } LongDateTime;
 
 struct DeviceStatus {
-
+    quint8 deviceAddress;// 设备地址
     quint8 Status       ;// 设备状态
     quint8 faultInfo[7] ;// 设备故障信息
 };
 
 struct DeviceStatusInfo {
     LongDateTime dateTime       ;
-    quint8 deviceAddress        ;// 设备地址
     DeviceStatus deviceStatus   ;
 };
 
@@ -106,6 +105,17 @@ struct DeviceErrorInfo {
     QString errorInfo   ;// 故障信息
 };
 
+class TimeCondition
+{
+public:
+    TimeCondition(QDateTime _startTime,QDateTime _endTime)
+        :startTime(_startTime),endTime(_endTime)
+    {
+    }
+    QDateTime startTime;
+    QDateTime endTime;
+};
+
 class TimeFormatTrans
 {
 public:
@@ -130,7 +140,7 @@ public:
         return dateTime;
     }
     // 将 LocalDateTime 转换为 LongDateTime
-   static LongDateTime convertToLongDateTime(const LocalDateTime& localDateTime)
+    static LongDateTime convertToLongDateTime(const LocalDateTime& localDateTime)
     {
         LongDateTime longDateTime;
         longDateTime.ti_year = localDateTime.year;

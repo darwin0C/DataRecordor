@@ -20,12 +20,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += $$PWD
 
 HEADERS += \
+    $$PWD/CommandCtrol.h \
+    $$PWD/CommandData.h \
     $$PWD/DeviceData.h \
     $$PWD/DeviceManager.h \
     $$PWD/EventInfo.h \
     $$PWD/devicestat.h
 
 SOURCES += \
+    $$PWD/CommandCtrol.cpp \
     $$PWD/DeviceManager.cpp \
     $$PWD/EventInfo.cpp \
     $$PWD/devicestat.cpp

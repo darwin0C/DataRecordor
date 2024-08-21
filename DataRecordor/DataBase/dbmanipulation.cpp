@@ -192,7 +192,7 @@ int DbManipulation::insertDeviceStatusInfo(const DeviceStatusInfo& statusInfo) {
     query.prepare(QString("INSERT INTO %1 (device_id, timestamp, status, error_code) VALUES (:device_id, :timestamp, :status, :error_code)")
                   .arg(dbMap[DB_Equ_WorkStat]));
 
-    query.bindValue(":device_id", statusInfo.deviceAddress);
+    query.bindValue(":device_id", statusInfo.deviceStatus.deviceAddress);
 
     // 将 LongDateTime 转换为 QDateTime
     QDateTime timestamp(TimeFormatTrans::TimeFormatTrans::getDateTime(statusInfo.dateTime));
@@ -202,6 +202,14 @@ int DbManipulation::insertDeviceStatusInfo(const DeviceStatusInfo& statusInfo) {
 
     // 将故障信息数组转换为 QByteArray
     query.bindValue(":error_code", QByteArray(reinterpret_cast<const char*>(statusInfo.deviceStatus.faultInfo), sizeof(statusInfo.deviceStatus.faultInfo)));
+
+    // 打印 SQL 查询以调试
+    QString boundSql = query.lastQuery();
+    QMap<QString, QVariant> boundValues = query.boundValues();
+    for (auto it = boundValues.cbegin(); it != boundValues.cend(); ++it) {
+        boundSql.replace(it.key(), it.value().toString());
+    }
+    qDebug() << "Executing SQL:" << boundSql;
 
     if (query.exec()) {
         // 获取自增的 stat_id 值
@@ -247,70 +255,102 @@ bool DbManipulation::insertDeviceTotalWorkTime(const DeviceTotalWorkTime& workTi
     }
 }
 
+
 bool DbManipulation::insertAlarmInfo(const AlarmInfo& alarmInfo) {
     if(!openDb())
         return false;
     QSqlQuery query(database);
-    query.prepare(QString("INSERT INTO %1 (alarmContent, statusChangeTime, alarmDetails) VALUES (:alarmContent, :statusChangeTime, :alarmDetails)").arg(dbMap[DB_AlarmInfo]));
+    query.prepare(QString("INSERT INTO %1 (alarm_content, alarm_status_change_time, alarm_info) VALUES (:alarmContent, :statusChangeTime, :alarmDetails)").arg(dbMap[DB_AlarmInfo]));
     query.bindValue(":alarmContent", alarmInfo.alarmContent);
     query.bindValue(":statusChangeTime",TimeFormatTrans::getDateTime(alarmInfo.statusChangeTime).toString(dataTimeStyle));
     query.bindValue(":alarmDetails", alarmInfo.alarmDetails);
-    return query.exec();
+    // 打印 SQL 查询以调试
+    QString boundSql = query.lastQuery();
+    QMap<QString, QVariant> boundValues = query.boundValues();
+    for (auto it = boundValues.cbegin(); it != boundValues.cend(); ++it) {
+        boundSql.replace(it.key(), it.value().toString());
+    }
+    qDebug() << "Executing SQL:" << boundSql;
+
+    if (query.exec()) {
+        return true;
+    } else {
+        qDebug() << "Failed to insert:" << query.lastError();
+        return false;
+    }
 }
 
 bool DbManipulation::insertGunMoveData(const GunMoveData& gunMoveData) {
     if(!openDb())
         return false;
+
     QSqlQuery query(database);
-    query.prepare(QString("INSERT INTO %1 (barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, autoAdjustmentStatus) "
-                          "VALUES (:barrelDirection, :elevationAngle, :chassisRoll, :chassisPitch, :statusChangeTime, :autoAdjustmentStatus)").arg(dbMap[DB_GunMoveInfo]));
-    query.bindValue(":barrelDirection", gunMoveData.barrelDirection);
-    query.bindValue(":elevationAngle", gunMoveData.elevationAngle);
-    query.bindValue(":chassisRoll", gunMoveData.chassisRoll);
-    query.bindValue(":chassisPitch", gunMoveData.chassisPitch);
-    query.bindValue(":statusChangeTime", TimeFormatTrans::getDateTime(gunMoveData.statusChangeTime).toString(dataTimeStyle));
-    query.bindValue(":autoAdjustmentStatus", gunMoveData.autoAdjustmentStatus);
+    query.prepare(QString("INSERT INTO %1 (barrel_direction, elevation_angle, chassis_roll_angle, chassis_pitch_angle, status_change_time, auto_move_status) "
+                          "VALUES (:barrel_direction, :elevation_angle, :chassis_roll_angle, :chassis_pitch_angle, :status_change_time, :auto_move_status)")
+                  .arg(dbMap[DB_GunMoveInfo]));
+
+    query.bindValue(":barrel_direction", gunMoveData.barrelDirection);
+    query.bindValue(":elevation_angle", gunMoveData.elevationAngle);
+    query.bindValue(":chassis_roll_angle", gunMoveData.chassisRoll);
+    query.bindValue(":chassis_pitch_angle", gunMoveData.chassisPitch);
+    query.bindValue(":status_change_time", TimeFormatTrans::getDateTime(gunMoveData.statusChangeTime).toString(dataTimeStyle));
+    query.bindValue(":auto_move_status", gunMoveData.autoAdjustmentStatus);
+    // 打印 SQL 查询以调试
+    QString boundSql = query.lastQuery();
+    QMap<QString, QVariant> boundValues = query.boundValues();
+    for (auto it = boundValues.cbegin(); it != boundValues.cend(); ++it) {
+        boundSql.replace(it.key(), it.value().toString());
+    }
+    qDebug() << "Executing SQL:" << boundSql;
+
     if (query.exec()) {
         return true;
     } else {
-        qDebug() << "Failed to insert :" << query.lastError();
-        return false;  // 返回 -1 表示插入失败
+        qDebug() << "Failed to insert:" << query.lastError();
+        return false;
     }
 }
 
+
 bool DbManipulation::insertGunFiringData(const GunFiringData& gunFiringData) {
-    if(!openDb())
+    if (!openDb())
         return false;
+
     QString tableName = dbMap[DB_GunShootInfo];
     QSqlQuery query(database);
-    query.prepare(QString("INSERT INTO %1 (barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, firingCompletedSignal, recoilStatus, muzzleVelocityValid, propellantTemperature, muzzleVelocity) "
-                          "VALUES (:barrelDirection, :elevationAngle, :chassisRoll, :chassisPitch, :statusChangeTime, :firingCompletedSignal, :recoilStatus, :muzzleVelocityValid, :propellantTemperature, :muzzleVelocity)").arg(tableName));
 
-    // 绑定所有参数，并确保它们与 SQL 语句中的占位符一一对应
-    query.bindValue(":barrelDirection", gunFiringData.barrelDirection);
-    query.bindValue(":elevationAngle", gunFiringData.elevationAngle);
-    query.bindValue(":chassisRoll", gunFiringData.chassisRoll);
-    query.bindValue(":chassisPitch", gunFiringData.chassisPitch);
+    query.prepare(QString("INSERT INTO %1 (barrel_direction, elevation_angle, chassis_roll_angle, chassis_pitch_angle, status_change_time, firing_signal_complete, recoil_status, muzzle_velocity_valid, charge_temperature, muzzle_velocity) "
+                          "VALUES (:barrel_direction, :elevation_angle, :chassis_roll_angle, :chassis_pitch_angle, :status_change_time, :firing_signal_complete, :recoil_status, :muzzle_velocity_valid, :charge_temperature, :muzzle_velocity)")
+                  .arg(tableName));
+
+    // 绑定所有参数，确保它们与数据库表的字段名称一致
+    query.bindValue(":barrel_direction", gunFiringData.barrelDirection);
+    query.bindValue(":elevation_angle", gunFiringData.elevationAngle);
+    query.bindValue(":chassis_roll_angle", gunFiringData.chassisRoll);
+    query.bindValue(":chassis_pitch_angle", gunFiringData.chassisPitch);
 
     QString formattedTime = TimeFormatTrans::getDateTime(gunFiringData.statusChangeTime).toString(dataTimeStyle);
-    query.bindValue(":statusChangeTime", formattedTime);
+    query.bindValue(":status_change_time", formattedTime);
 
-    query.bindValue(":firingCompletedSignal", gunFiringData.firingCompletedSignal);
-    query.bindValue(":recoilStatus", gunFiringData.recoilStatus);
-    query.bindValue(":muzzleVelocityValid", gunFiringData.muzzleVelocityValid);
-    query.bindValue(":propellantTemperature", gunFiringData.propellantTemperature);
-    query.bindValue(":muzzleVelocity", gunFiringData.muzzleVelocity);
-    // 打印实际执行的SQL语句
-    QString boundSql = query.executedQuery();
-    for (const auto &value : query.boundValues().keys()) {
-        boundSql.replace(value, query.boundValues().value(value).toString());
+    query.bindValue(":firing_signal_complete", gunFiringData.firingCompletedSignal);
+    query.bindValue(":recoil_status", gunFiringData.recoilStatus);
+    query.bindValue(":muzzle_velocity_valid", gunFiringData.muzzleVelocityValid);
+    query.bindValue(":charge_temperature", gunFiringData.propellantTemperature);
+    query.bindValue(":muzzle_velocity", gunFiringData.muzzleVelocity);
+
+    // 打印 SQL 查询以调试
+    QString boundSql = query.lastQuery();
+    QMap<QString, QVariant> boundValues = query.boundValues();
+    for (auto it = boundValues.cbegin(); it != boundValues.cend(); ++it) {
+        boundSql.replace(it.key(), it.value().toString());
     }
     qDebug() << "Executing SQL:" << boundSql;
+
     if (query.exec()) {
         return true;
     } else {
-        qDebug() << "Failed to insert :" << query.lastError();
-        return false;  // 返回 -1 表示插入失败
+        qDebug() << "Failed to insert:" << query.lastError().text();
+        return false;
     }
 }
 
@@ -327,7 +367,7 @@ bool DbManipulation::updateDeviceStatusInfo(const DeviceStatusInfo& statusInfo) 
     query.prepare(QString("UPDATE %1 SET timestamp = :timestamp, status = :status, error_code = :error_code WHERE device_id = :device_id")
                   .arg(dbMap[DB_Equ_WorkStat]));
 
-    query.bindValue(":device_id", statusInfo.deviceAddress);
+    query.bindValue(":device_id", statusInfo.deviceStatus.deviceAddress);
 
     // 将 LongDateTime 转换为 QDateTime
     query.bindValue(":timestamp", TimeFormatTrans::getDateTime(statusInfo.dateTime).toString(dataTimeStyle));
@@ -409,18 +449,17 @@ bool DbManipulation::updateDeviceTotalWorkTimeAdd1Minute( int deviceId) {
     }
     return true;
 }
-
-bool DbManipulation::updateAlarmInfo(const AlarmInfo& alarmInfo) {
+//alarm_content, alarm_status_change_time, alarm_info
+bool DbManipulation::updateAlarmInfo(int id,const AlarmInfo& alarmInfo) {
     if(!openDb())
         return false;
     QSqlQuery query(database);
-    query.prepare(QString("UPDATE %1 SET statusChangeTime = :statusChangeTime, alarmDetails = :alarmDetails WHERE alarmContent = :alarmContent")
+    query.prepare(QString("UPDATE %1 SET alarm_content = :alarmContent alarm_status_change_time = :statusChangeTime, alarm_info = :alarmDetails WHERE id = :id")
                   .arg(dbMap[DB_AlarmInfo]));
-
+    query.bindValue(":alarmContent", alarmInfo.alarmContent);
     query.bindValue(":statusChangeTime", TimeFormatTrans::getDateTime(alarmInfo.statusChangeTime).toString(dataTimeStyle));
     query.bindValue(":alarmDetails", alarmInfo.alarmDetails);
-    query.bindValue(":alarmContent", alarmInfo.alarmContent);
-
+    query.bindValue(":id", id);
     if (query.exec()) {
         return true;
     } else {
@@ -430,45 +469,90 @@ bool DbManipulation::updateAlarmInfo(const AlarmInfo& alarmInfo) {
 }
 
 
-bool DbManipulation::updateGunMoveData(const GunMoveData& gunMoveData) {
-    if(!openDb())
+bool DbManipulation::updateGunMoveData(int id, const GunMoveData& gunMoveData) {
+    if (!openDb())
         return false;
+
+    QString tableName = dbMap[DB_GunMoveInfo];
     QSqlQuery query(database);
-    query.prepare(QString("UPDATE %1 SET elevationAngle = :elevationAngle, chassisRoll = :chassisRoll, chassisPitch = :chassisPitch, statusChangeTime = :statusChangeTime, autoAdjustmentStatus = :autoAdjustmentStatus WHERE barrelDirection = :barrelDirection").arg(dbMap[DB_GunMoveInfo]));
-    query.bindValue(":elevationAngle", gunMoveData.elevationAngle);
-    query.bindValue(":chassisRoll", gunMoveData.chassisRoll);
-    query.bindValue(":chassisPitch", gunMoveData.chassisPitch);
-    query.bindValue(":statusChangeTime", TimeFormatTrans::getDateTime(gunMoveData.statusChangeTime).toString(dataTimeStyle));
-    query.bindValue(":autoAdjustmentStatus", gunMoveData.autoAdjustmentStatus);
-    query.bindValue(":barrelDirection", gunMoveData.barrelDirection);
+
+    query.prepare(QString("UPDATE %1 SET "
+                          "barrel_direction = :barrel_direction, "
+                          "elevation_angle = :elevation_angle, "
+                          "chassis_roll_angle = :chassis_roll_angle, "
+                          "chassis_pitch_angle = :chassis_pitch_angle, "
+                          "status_change_time = :status_change_time, "
+                          "auto_move_status = :auto_move_status "
+                          "WHERE id = :id")
+                  .arg(tableName));
+
+    query.bindValue(":barrel_direction", gunMoveData.barrelDirection);
+    query.bindValue(":elevation_angle", gunMoveData.elevationAngle);
+    query.bindValue(":chassis_roll_angle", gunMoveData.chassisRoll);
+    query.bindValue(":chassis_pitch_angle", gunMoveData.chassisPitch);
+    query.bindValue(":status_change_time", TimeFormatTrans::getDateTime(gunMoveData.statusChangeTime).toString(dataTimeStyle));
+    query.bindValue(":auto_move_status", gunMoveData.autoAdjustmentStatus);
+    query.bindValue(":id", id);
+
     if (query.exec()) {
         return true;
     } else {
-        qDebug() << "Failed to update :" << query.lastError();
-        return false;  // 返回 -1 表示插入失败
+        qDebug() << "Failed to update:" << query.lastError();
+        return false;
     }
 }
 
-bool DbManipulation::updateGunFiringData(const GunFiringData& gunFiringData) {
-    if(!openDb())
+bool DbManipulation::updateGunFiringData(int id, const GunFiringData& gunFiringData) {
+    if (!openDb())
         return false;
+
+    QString tableName = dbMap[DB_GunShootInfo];
     QSqlQuery query(database);
-    query.prepare(QString("UPDATE %1 SET elevationAngle = :elevationAngle, chassisRoll = :chassisRoll, chassisPitch = :chassisPitch, statusChangeTime = :statusChangeTime, firingCompletedSignal = :firingCompletedSignal, recoilStatus = :recoilStatus, muzzleVelocityValid = :muzzleVelocityValid, propellantTemperature = :propellantTemperature, muzzleVelocity = :muzzleVelocity WHERE barrelDirection = :barrelDirection").arg(dbMap[DB_GunShootInfo]));
-    query.bindValue(":elevationAngle", gunFiringData.elevationAngle);
-    query.bindValue(":chassisRoll", gunFiringData.chassisRoll);
-    query.bindValue(":chassisPitch", gunFiringData.chassisPitch);
-    query.bindValue(":statusChangeTime", TimeFormatTrans::getDateTime(gunFiringData.statusChangeTime).toString(dataTimeStyle));
-    query.bindValue(":firingCompletedSignal", gunFiringData.firingCompletedSignal);
-    query.bindValue(":recoilStatus", gunFiringData.recoilStatus);
-    query.bindValue(":muzzleVelocityValid", gunFiringData.muzzleVelocityValid);
-    query.bindValue(":propellantTemperature", gunFiringData.propellantTemperature);
-    query.bindValue(":muzzleVelocity", gunFiringData.muzzleVelocity);
-    query.bindValue(":barrelDirection", gunFiringData.barrelDirection);
+
+    query.prepare(QString("UPDATE %1 SET "
+                          "barrel_direction = :barrel_direction, "
+                          "elevation_angle = :elevation_angle, "
+                          "chassis_roll_angle = :chassis_roll_angle, "
+                          "chassis_pitch_angle = :chassis_pitch_angle, "
+                          "status_change_time = :status_change_time, "
+                          "firing_signal_complete = :firing_signal_complete, "
+                          "recoil_status = :recoil_status, "
+                          "muzzle_velocity_valid = :muzzle_velocity_valid, "
+                          "charge_temperature = :charge_temperature, "
+                          "muzzle_velocity = :muzzle_velocity "
+                          "WHERE id = :id")
+                  .arg(tableName));
+
+    // 绑定所有参数
+    query.bindValue(":barrel_direction", gunFiringData.barrelDirection);
+    query.bindValue(":elevation_angle", gunFiringData.elevationAngle);
+    query.bindValue(":chassis_roll_angle", gunFiringData.chassisRoll);
+    query.bindValue(":chassis_pitch_angle", gunFiringData.chassisPitch);
+
+    QString formattedTime = TimeFormatTrans::getDateTime(gunFiringData.statusChangeTime).toString(dataTimeStyle);
+    query.bindValue(":status_change_time", formattedTime);
+
+    query.bindValue(":firing_signal_complete", gunFiringData.firingCompletedSignal);
+    query.bindValue(":recoil_status", gunFiringData.recoilStatus);
+    query.bindValue(":muzzle_velocity_valid", gunFiringData.muzzleVelocityValid);
+    query.bindValue(":charge_temperature", gunFiringData.propellantTemperature);
+    query.bindValue(":muzzle_velocity", gunFiringData.muzzleVelocity);
+
+    query.bindValue(":id", id);  // 绑定记录的主键 ID
+
+    // 打印 SQL 查询以调试
+    QString boundSql = query.lastQuery();
+    QMap<QString, QVariant> boundValues = query.boundValues();
+    for (auto it = boundValues.cbegin(); it != boundValues.cend(); ++it) {
+        boundSql.replace(it.key(), it.value().toString());
+    }
+    qDebug() << "Executing SQL:" << boundSql;
+
     if (query.exec()) {
         return true;
     } else {
-        qDebug() << "Failed to update :" << query.lastError();
-        return false;  // 返回 -1 表示插入失败
+        qDebug() << "Failed to update:" << query.lastError().text();
+        return false;
     }
 }
 
@@ -515,7 +599,7 @@ QList<DeviceStatusInfo> DbManipulation::getDeviceStatusInfos(const TimeCondition
     if (query.exec()) {
         while (query.next()) {
             DeviceStatusInfo statusInfo;
-            statusInfo.deviceAddress = query.value(0).toUInt();  // 获取 device_id
+            statusInfo.deviceStatus.deviceAddress = query.value(0).toUInt();  // 获取 device_id
 
             // 将 QDateTime 转换为 LongDateTime
             QDateTime timestamp = query.value(1).toDateTime();
@@ -580,10 +664,10 @@ QList<AlarmInfo> DbManipulation::getAlarmInfos(const TimeCondition *timeConditio
     openDb();
     QList<AlarmInfo> alarmList;
     QSqlQuery query(database);
-    QString queryString = QString("SELECT alarmContent, statusChangeTime, alarmDetails FROM %1").arg(dbMap[DB_AlarmInfo]);
+    QString queryString = QString("SELECT alarm_content, alarm_status_change_time, alarm_info FROM %1").arg(dbMap[DB_AlarmInfo]);
 
     if (timeCondition && timeCondition->startTime.isValid() && timeCondition->endTime.isValid()) {
-        queryString += " WHERE statusChangeTime BETWEEN :startTime AND :endTime";
+        queryString += " WHERE alarm_status_change_time BETWEEN :startTime AND :endTime";
         query.prepare(queryString);
         query.bindValue(":startTime", timeCondition->startTime);
         query.bindValue(":endTime", timeCondition->endTime);
@@ -608,16 +692,16 @@ QList<AlarmInfo> DbManipulation::getAlarmInfos(const TimeCondition *timeConditio
     }
     return alarmList;
 }
-
 QList<GunMoveData> DbManipulation::getGunMoveData(const TimeCondition *timeCondition) {
     openDb();
     QList<GunMoveData> gunMoveList;
     QSqlQuery query(database);
-    QString queryString = QString("SELECT barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, autoAdjustmentStatus FROM %1")
+
+    QString queryString = QString("SELECT barrel_direction, elevation_angle, chassis_roll_angle, chassis_pitch_angle, status_change_time, auto_move_status FROM %1")
             .arg(dbMap[DB_GunMoveInfo]);
 
     if (timeCondition && timeCondition->startTime.isValid() && timeCondition->endTime.isValid()) {
-        queryString += " WHERE statusChangeTime BETWEEN :startTime AND :endTime";
+        queryString += " WHERE status_change_time BETWEEN :startTime AND :endTime";
         query.prepare(queryString);
         query.bindValue(":startTime", timeCondition->startTime);
         query.bindValue(":endTime", timeCondition->endTime);
@@ -628,15 +712,15 @@ QList<GunMoveData> DbManipulation::getGunMoveData(const TimeCondition *timeCondi
     if (query.exec()) {
         while (query.next()) {
             GunMoveData gunMoveData;
-            gunMoveData.barrelDirection = query.value(0).toUInt();  // 获取 barrelDirection
-            gunMoveData.elevationAngle = query.value(1).toUInt();   // 获取 elevationAngle
-            gunMoveData.chassisRoll = query.value(2).toUInt();      // 获取 chassisRoll
-            gunMoveData.chassisPitch = query.value(3).toUInt();     // 获取 chassisPitch
+            gunMoveData.barrelDirection = query.value(0).toFloat();  // 获取 barrel_direction
+            gunMoveData.elevationAngle = query.value(1).toFloat();   // 获取 elevation_angle
+            gunMoveData.chassisRoll = query.value(2).toFloat();      // 获取 chassis_roll_angle
+            gunMoveData.chassisPitch = query.value(3).toFloat();     // 获取 chassis_pitch_angle
 
-            // 将 QDateTime 转换为 LongDateTime
             QDateTime timestamp = query.value(4).toDateTime();
             gunMoveData.statusChangeTime = TimeFormatTrans::getLongDataTime(timestamp);
-            gunMoveData.autoAdjustmentStatus = query.value(5).toUInt(); // 获取 autoAdjustmentStatus
+
+            gunMoveData.autoAdjustmentStatus = query.value(5).toInt(); // 获取 auto_move_status
 
             gunMoveList.append(gunMoveData);
         }
@@ -647,16 +731,19 @@ QList<GunMoveData> DbManipulation::getGunMoveData(const TimeCondition *timeCondi
     return gunMoveList;
 }
 
+
 QList<GunFiringData> DbManipulation::getGunFiringData(const TimeCondition *timeCondition) {
     openDb();
     QList<GunFiringData> gunFiringList;
     QSqlQuery query(database);
-    QString queryString = QString("SELECT barrelDirection, elevationAngle, chassisRoll, chassisPitch, statusChangeTime, "
-                                  "firingCompletedSignal, recoilStatus, muzzleVelocityValid, propellantTemperature, muzzleVelocity FROM %1")
+
+    // 修改列名以匹配数据库表中的实际列名
+    QString queryString = QString("SELECT barrel_direction, elevation_angle, chassis_roll_angle, chassis_pitch_angle, status_change_time, "
+                                  "firing_signal_complete, recoil_status, muzzle_velocity_valid, charge_temperature, muzzle_velocity FROM %1")
             .arg(dbMap[DB_GunShootInfo]);
 
     if (timeCondition && timeCondition->startTime.isValid() && timeCondition->endTime.isValid()) {
-        queryString += " WHERE statusChangeTime BETWEEN :startTime AND :endTime";
+        queryString += " WHERE status_change_time BETWEEN :startTime AND :endTime";
         query.prepare(queryString);
         query.bindValue(":startTime", timeCondition->startTime);
         query.bindValue(":endTime", timeCondition->endTime);
@@ -667,19 +754,20 @@ QList<GunFiringData> DbManipulation::getGunFiringData(const TimeCondition *timeC
     if (query.exec()) {
         while (query.next()) {
             GunFiringData gunFiringData;
-            gunFiringData.barrelDirection = query.value(0).toUInt();  // 获取 barrelDirection
-            gunFiringData.elevationAngle = query.value(1).toUInt();   // 获取 elevationAngle
-            gunFiringData.chassisRoll = query.value(2).toUInt();      // 获取 chassisRoll
-            gunFiringData.chassisPitch = query.value(3).toUInt();     // 获取 chassisPitch
+            gunFiringData.barrelDirection = query.value(0).toUInt();  // 获取 barrel_direction
+            gunFiringData.elevationAngle = query.value(1).toUInt();   // 获取 elevation_angle
+            gunFiringData.chassisRoll = query.value(2).toUInt();      // 获取 chassis_roll_angle
+            gunFiringData.chassisPitch = query.value(3).toUInt();     // 获取 chassis_pitch_angle
 
             // 将 QDateTime 转换为 LongDateTime
             QDateTime timestamp = query.value(4).toDateTime();
             gunFiringData.statusChangeTime = TimeFormatTrans::getLongDataTime(timestamp);
-            gunFiringData.firingCompletedSignal = query.value(5).toUInt();   // 获取 firingCompletedSignal
-            gunFiringData.recoilStatus = query.value(6).toUInt();            // 获取 recoilStatus
-            gunFiringData.muzzleVelocityValid = query.value(7).toUInt();     // 获取 muzzleVelocityValid
-            gunFiringData.propellantTemperature = query.value(8).toUInt();   // 获取 propellantTemperature
-            gunFiringData.muzzleVelocity = query.value(9).toUInt();          // 获取 muzzleVelocity
+
+            gunFiringData.firingCompletedSignal = query.value(5).toUInt();   // 获取 firing_signal_complete
+            gunFiringData.recoilStatus = query.value(6).toUInt();            // 获取 recoil_status
+            gunFiringData.muzzleVelocityValid = query.value(7).toUInt();     // 获取 muzzle_velocity_valid
+            gunFiringData.propellantTemperature = query.value(8).toFloat();  // 获取 charge_temperature
+            gunFiringData.muzzleVelocity = query.value(9).toFloat();         // 获取 muzzle_velocity
 
             gunFiringList.append(gunFiringData);
         }

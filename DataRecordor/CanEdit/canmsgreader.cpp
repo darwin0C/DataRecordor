@@ -11,7 +11,7 @@ CanMsgReader::CanMsgReader(QObject *parent) : QObject(parent)
 
 }
 
-bool CanMsgReader::readCanDataFromXml(QList<CanDataFormat>& canDataList, const QString& fileName) {
+bool CanMsgReader::readCanDataFromXml(const QString& fileName) {
     // 打开文件
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -98,9 +98,14 @@ bool CanMsgReader::readCanDataFromXml(QList<CanDataFormat>& canDataList, const Q
     return true;
 }
 
-QMap<QString,CanDataValue> CanMsgReader::getValues(const CanData &data, const QList<CanDataFormat> &canDataList)
+QMap<QString,CanDataValue> CanMsgReader::getValues(const CanData &data)
 {
     return  parseCanData( QByteArray((char *)data.data,8),canDataList,data.dataid);
+}
+
+QList<CanDataFormat> CanMsgReader::getCanDataList()
+{
+    return canDataList;
 }
 
 // 辅助函数：从数据字节流中提取指定起始位和长度的值

@@ -61,7 +61,7 @@ void DeviceStat::recoardWorkTime(QDateTime endTime)
     startTime=endTime;
     if(workTime>=60)
     {
-        emit sig_WorkTimeRecord(lastDeviceStat.deviceAddress);
+        emit sig_WorkTimeRecord(lastDeviceStat.deviceStatus.deviceAddress);
         workTime=0;
     }
 }
@@ -71,4 +71,7 @@ int DeviceStat::LinkStat()
 {
     return DeviceLinkStat;
 }
-
+DeviceStatusInfo DeviceStat::workStatus()
+{
+    return lastDeviceStat;
+}

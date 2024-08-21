@@ -15,9 +15,7 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
         qDebug()<<info.portName();
         Seriallist<<info.portName();
     }
-
 #ifdef SERIALCOM
-
     if(Seriallist.count()>3)
     {
         try
@@ -33,7 +31,7 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
     }
 
 #endif
-#ifndef NET_COM
+#ifdef NET_COM
     myComBdCastSocketPort=6800;  //广播端口号
 
     //mySelfSocketPort=65110;  //自己的端口号
@@ -46,8 +44,7 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
 
     myNetComInterface=new QMyNetCom();
     myNetComInterface->initSocket(mySelfSocketPort);
-    connect(myNetComInterface,SIGNAL(canDataSig(CanData)),this,SLOT(ComDataHandle(CanData)));
-    connect(myNetComInterface,SIGNAL(sendQByteArraySig(QByteArray)),this,SLOT(netDataHandle(QByteArray)));
+
     if(myNetComInterface->bcommandudpopen)
         myNetComInterface->start();
 
@@ -133,21 +130,12 @@ int ComManager::sendSerialData(QByteArray array)
 }
 
 
-//网络数据处理
-void ComManager::netDataHandle(QByteArray array)
-{
-    //EquManager::instance()->remoteCtrlHandle(array);
-
-}
-
-//网络数据处理
 //发送应答
 //参数  reciveCode  0xE0 炮长   0xE2 通信控制单元   0xE9   系统指挥啊
 //参数  cmdCode     应答控制字
 //参数  data        数据
 //参数  len         数据长度
-int ComManager::sendData2Command( unsigned char reciveCode,unsigned char cmdcode,unsigned char *data,int len,
-                                  QString ip, int port)
+int ComManager::sendData2Command(unsigned char cmdcode,unsigned char *data,int len)
 {
     Q_ASSERT(myNetComInterface);
     //发送数据 给目的目标
@@ -157,7 +145,7 @@ int ComManager::sendData2Command( unsigned char reciveCode,unsigned char cmdcode
     buff[1]=0x90;
     buff[2]=(len+6)&0xFF;
     buff[3]=((len+6)>>8)&0xFF;
-    buff[4]=reciveCode;
+    buff[4]=CommandAdrrCode;
     buff[5]=SelfAddrCode;
     buff[6]=cmdcode;
     memcpy(buff+7,data,len);
@@ -165,7 +153,7 @@ int ComManager::sendData2Command( unsigned char reciveCode,unsigned char cmdcode
     for(int i=2;i<len+7;i++)
         buff[len+7]+= buff[i];
     buff[len+7]=~buff[len+7]+1;
-    int ret=myNetComInterface->sendData(buff,len+8,ip,port);
+    int ret=myNetComInterface->sendData(buff,len+8,netSocketIP,netSocketPort);
     QByteArray temarry((char*)buff,len+8);
     qDebug()<<ret <<"net datalen 1:"<<temarry.toHex();
 

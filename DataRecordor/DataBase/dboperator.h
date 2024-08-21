@@ -32,9 +32,9 @@ public:
     int insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
     bool insertDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
 
-    bool updateAlarmInfo(const AlarmInfo &alarmInfo);
-    bool updateGunMoveData(const GunMoveData &gunMoveData);
-    bool updateGunFiringData(const GunFiringData &gunFiringData);
+    bool updateAlarmInfo(int id,const AlarmInfo &alarmInfo);
+    bool updateGunMoveData(int id,const GunMoveData &gunMoveData);
+    bool updateGunFiringData(int id,const GunFiringData &gunFiringData);
     bool updateDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
     bool updateDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
     bool updateDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);

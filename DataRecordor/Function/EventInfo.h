@@ -15,8 +15,6 @@ public:
 
 private:
     CanMsgReader canReader;
-    QList<CanDataFormat> canDataList;
-
     QMap<int,QString> eventList;
 
     GunMoveData gunMoveData;
@@ -29,10 +27,11 @@ private:
     void test();
     void saveGunMovedata();
     void saveGunFiringData();
-public slots:
-    void processCanData(const CanData &data);
+    void saveAlarmInfo(const AlarmInfo &alarmInfo);
+
 private slots:
     void onTimeout();
+    void processCanData(const CanData &data);
 signals:
 };
 

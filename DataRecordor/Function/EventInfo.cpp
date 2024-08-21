@@ -3,13 +3,15 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QTimer>
-
+#include "MsgSignals.h"
 EventInfo::EventInfo(QObject *parent) : QObject(parent)
 {
     QString deviceStatFile=QCoreApplication::applicationDirPath()+Event_CANDataFile;
-    canReader.readCanDataFromXml(canDataList,deviceStatFile);
-    qDebug()<<"canDataList"<<canDataList.count();
+    canReader.readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
+
     getEventList();
+
+    connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
     test();
 }
 void EventInfo::test()
@@ -23,21 +25,26 @@ void EventInfo::test()
     processCanData(data);
     qDebug()<<"11";
     data.dataid=0x0C8768CB;
-    data.data[0]=0x0F;
+    processCanData(data);
+    data.dataid=0x0CF3A229;
+    processCanData(data);
+    data.dataid=0x0CF08534;
+    processCanData(data);
+    data.dataid=0x0CF08634;
     processCanData(data);
 }
 void EventInfo::processCanData(const CanData &data)
 {
     if(!eventList.contains(data.dataid))
         return;
-    QMap<QString,CanDataValue> dataMap= canReader.getValues(data,canDataList);
+    QMap<QString,CanDataValue> dataMap= canReader.getValues(data);
     qDebug()<<"dataMap"<<dataMap.count();
     refrushStat(data.dataid,dataMap,data.dateTime);
 }
 
 void EventInfo::getEventList()
 {
-    for(CanDataFormat canData:canDataList)
+    for(const CanDataFormat &canData:canReader.getCanDataList())
     {
         eventList[canData.id]=canData.msgName;
     }
@@ -85,6 +92,22 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
         isInitSpeedreceived=true;
         gunFiringData.muzzleVelocity=dataMap["InitSpeed"].value.toUInt();
     }
+    else if(sigName=="NuclearBioAlarm")//核生化报警
+    {
+        AlarmInfo alarmInfo;
+        alarmInfo.alarmContent=0;
+        alarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
+        alarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt()& 0xFFFF;
+        saveAlarmInfo(alarmInfo);
+    }
+    else if(sigName=="FireExtinguishSuppressAlarm")//灭火抑爆报警
+    {
+        AlarmInfo alarmInfo;
+        alarmInfo.alarmContent=1;
+        alarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
+        alarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt() & 0xFF;
+        saveAlarmInfo(alarmInfo);
+    }
 }
 
 void EventInfo::onTimeout()
@@ -96,7 +119,6 @@ void EventInfo::onTimeout()
     }
 }
 
-
 void EventInfo::saveGunMovedata()
 {
     DbOperator::Get()->insertGunMoveData(gunMoveData);
@@ -104,4 +126,9 @@ void EventInfo::saveGunMovedata()
 void EventInfo::saveGunFiringData()
 {
     DbOperator::Get()->insertGunFiringData(gunFiringData);
+}
+
+void EventInfo::saveAlarmInfo(const AlarmInfo &alarmInfo)
+{
+    DbOperator::Get()->insertAlarmInfo(alarmInfo);
 }

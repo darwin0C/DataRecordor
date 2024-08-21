@@ -1,10 +1,9 @@
 #include "qmynetcom.h"
 #include  <QThread>
+#include "MsgSignals.h"
 
-#define DataHead1   0xEB
-#define DataHead2   0x90
-#define DataHeadAA   0xAA
-#define DataHead55   0x55
+#define DataHeadEB   0xEB
+#define DataHead90   0x90
 
 #define MaxPacketLen  512
 QMyNetCom::QMyNetCom(QObject *parent) :
@@ -66,7 +65,7 @@ void QMyNetCom::netDataHandle()
         ushort packlen=0;//接收一包数据长度
         ushort len=0;  //数据包里面的数据长度
         myNetRx->Peek(buff,8);
-        if(buff[0]==DataHead1&&buff[1]==DataHead2) //判断数据头
+        if(buff[0]==DataHeadEB&&buff[1]==DataHead90) //判断数据头
         {
             //指挥数据处理
             len=buff[3]<<8|buff[2];
@@ -81,101 +80,13 @@ void QMyNetCom::netDataHandle()
             myNetRx->Peek(tem,packlen);
             if(0==Verify_Sum_Complement((unsigned char *)tem,packlen))
             {
-                //qDebug()<<"check right";
                 if(((char)(SelfAddrCode&0xFF))==tem[4])
                 {
-                    // qDebug()<<"check right...E5";
                     myNetRx->Get(tem,packlen);
                     commandDataHandle(tem,packlen);
                 }
                 else
                     myNetRx->MoveReadP(1);
-            }else
-                myNetRx->MoveReadP(1);
-            delete[] tem;
-        }
-        else if(buff[0]==DataHeadAA&&buff[1]==DataHead55 &&buff[2]==DataHead1&&buff[3]==DataHead2)
-        {
-
-            len=buff[5]<<8|buff[4];
-            packlen=len+6;
-            if(packlen>myNetRx->InUseCount()) return ;
-
-            if(packlen>MaxPacketLen/*||(len<5)*/)
-            {
-                myNetRx->MoveReadP(1);
-                return;
-            }
-            char *tem=new char[packlen];
-            myNetRx->Peek(tem,packlen);
-            if(buff[6]==0xA1 || buff[6]==0xA2)
-            {
-                Net2CANData stFromOPCData;
-                CanData CanDataRev;
-                if(0==Verify_Sum((unsigned char *)tem,packlen))
-                {
-                    QByteArray array((char *)tem,packlen);
-                    myNetRx->Get(&stFromOPCData,packlen);
-                    CanDataRev.dataid=stFromOPCData.dataid;
-                    memcpy(CanDataRev.data,stFromOPCData.data,8);
-                    CanDataRev.len=8;
-                    if (((((stFromOPCData.dataid>>8)&0xff)==0x50))||//短包数据
-                            (stFromOPCData.dataid>>16&0xff)>=0xF1) //长包广播数据
-                    {
-                        emit canDataSig(CanDataRev);
-                        QByteArray array((char *)&CanDataRev.dataid,4);
-                        QByteArray array2((char *)&CanDataRev.data,8);
-                        //qDebug()<<"rev UDP Data 2:"<<array.toHex()<<array2.toHex();
-                    }
-                    else
-                    {
-                        //emit canDataSig(CanDataRev);
-                        QByteArray array((char *)&CanDataRev.dataid,4);
-                        QByteArray array2((char *)&CanDataRev.data,8);
-                        //qDebug()<<"rev UDP Data 2:"<<array.toHex()<<array2.toHex();
-                    }
-                }else
-                    myNetRx->MoveReadP(1);
-                delete[] tem;
-            }
-            else
-            {
-                //packlen+=1;
-                packlen=len+7;
-                if(packlen>myNetRx->InUseCount()) return ;
-                char *tem=new char[packlen];
-                myNetRx->Peek(tem,packlen);
-                QByteArray arrayTemp((char *)(tem),packlen);
-                qDebug()<<"remote ctrl:"<<arrayTemp.toHex();
-                if(tem[packlen-1]==(char)0xEE/*0==Verify_Sum2((unsigned char *)tem,packlen)*/)
-                {
-                    myNetRx->Get(tem,packlen);
-                    QByteArray array((char *)(tem+6),len);
-                    emit sendQByteArraySig(array);
-                }else
-                    myNetRx->MoveReadP(1);
-                delete[] tem;
-            }
-        }
-        else if(buff[0]==0x7F && buff[1]==0x24)//雷达导引数据
-        {
-            if(myNetRx->InUseCount()<10) return ;
-            uchar buffTemp[10]={0};
-            myNetRx->Peek(buffTemp,10);
-            packlen=buffTemp[9]<<8|buffTemp[8];
-            if(packlen>myNetRx->InUseCount())
-            {
-                return;
-            }
-            char *tem=new char[packlen];
-            myNetRx->Peek(tem,packlen);
-            unsigned char checksum=tem[packlen-2];
-            if(checksum==Verify_SumLow8((unsigned char *)tem,packlen-2))
-            {
-                myNetRx->Get(tem,packlen);
-                QByteArray array((char *)(tem),packlen);
-                emit sendQByteArraySig(array);
-                qDebug()<<"receive Radar data:"<<array.toHex();
             }else
                 myNetRx->MoveReadP(1);
             delete[] tem;
@@ -256,10 +167,17 @@ int QMyNetCom::sendData(unsigned char *data,int len, QString ip,int port)
 
 void QMyNetCom::commandDataHandle(char *buff,ushort dlen)
 {
-    //buff 0-5  // 0-1 0xEB90  2-3 len  4 收站码0xE5  5发站码
-    QByteArray temData;
-    unsigned char sendCode=buff[5]; //发站码
-    unsigned char cmdCode=buff[6]; //命令字1
+    //    //buff 0-5  // 0-1 0xEB90  2-3 len  4 收站码0xE5  5发站码
+    //    QByteArray temData;
+    //    unsigned char sendCode=buff[5]; //发站码
+    //    unsigned char cmdCode=buff[6]; //命令字1
 
+    QByteArray byteArray(buff,dlen);
+    int start = 6;  // 第7位 命令字开始
+    int length = byteArray.size() - 7;  // 计算长度
+
+    QByteArray result = byteArray.mid(start, length);
+    emit MsgSignals::getInstance()->commandDataSig(result);
+    qDebug() << result;  //
 }
 

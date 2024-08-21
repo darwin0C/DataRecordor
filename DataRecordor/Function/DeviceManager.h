@@ -12,10 +12,12 @@ class DeviceManager : public QObject
     Q_OBJECT
 public:
     explicit DeviceManager(QObject *parent = nullptr);
-    void processCanData(const CanData &data);
+
+    QByteArray getDeviceStat(int deviceAddress,int &deviceCount);
+    QByteArray getErrorDeviceStat(int &deviceCount);
 private:
     CanMsgReader canReader;
-    QList<CanDataFormat> canDataList;
+    //QList<CanDataFormat> canDataList;
     //QList<int> deviceList;
     QMap<int,DeviceStat*> devices;
     void getDeviceLists();
@@ -27,10 +29,10 @@ private:
 
 signals:
 
-
 private slots:
     void recordWorkTime(int deviceID);
     void StatWorkChange(DeviceStatusInfo deviceInfo);
+    void processCanData(const CanData &data);
 };
 
 #endif // DEVICEMANAGER_H

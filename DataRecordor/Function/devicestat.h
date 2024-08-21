@@ -14,6 +14,7 @@ public:
     void deviceDataHandle(uint id,unsigned char *buff);
     int LinkStat();
     bool refreshStat(const DeviceStatusInfo &Stat);
+    DeviceStatusInfo workStatus();
 private slots:
     void timerStatHandle();
 private:

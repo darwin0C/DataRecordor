@@ -3,16 +3,20 @@
 #include <QDebug>
 #include <QFile>
 #include <QXmlStreamReader>
+#include "MsgSignals.h"
 DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
 {
     QString deviceStatFile=QCoreApplication::applicationDirPath()+DeviceStat_CANDataFile;
-    canReader.readCanDataFromXml(canDataList,deviceStatFile);
-    qDebug()<<"canDataList"<<canDataList.count();
+    canReader.readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
+
     getDeviceLists();
 
     dbOperator=DbOperator::Get();
     QString deviceNameFile=QCoreApplication::applicationDirPath()+DeviceNameFile;
     loadAndInsertDevicesFromXml(deviceNameFile);
+
+    connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&DeviceManager::processCanData);
+
     test();
 }
 
@@ -32,14 +36,16 @@ void DeviceManager::processCanData(const CanData &data)
 {
     if(!devices.contains(data.dataid))
         return;
-    QMap<QString,CanDataValue> dataMap= canReader.getValues(data,canDataList);
+    QMap<QString,CanDataValue> dataMap= canReader.getValues(data);
     qDebug()<<"dataMap"<<dataMap.count();
 
     DeviceStatusInfo deviceIndo;
     deviceIndo.dateTime=TimeFormatTrans::convertToLongDateTime(data.dateTime);
     deviceIndo.deviceStatus.Status=dataMap["WorkStatus"].value.toUInt();
-    deviceIndo.deviceAddress=data.dataid & 0xFF;
-    memcpy( &deviceIndo.deviceStatus,data.data,sizeof(DeviceStatus));
+    deviceIndo.deviceStatus.deviceAddress=data.dataid & 0xFF;
+
+    memcpy( &deviceIndo.deviceStatus.faultInfo,data.data+1,7);
+
     //判断状态是否变化
     if(devices[data.dataid]->refreshStat(deviceIndo))
     {
@@ -48,6 +54,50 @@ void DeviceManager::processCanData(const CanData &data)
             saveDeviceStatSignals(statId,dataMap);
     }
 }
+
+QByteArray DeviceManager::getErrorDeviceStat(int &deviceCount)
+{
+    QByteArray array;
+    deviceCount = 0;
+    for(auto it = devices.begin(); it != devices.end(); ++it)
+    {
+        if(it.value() != nullptr) // 检查指针合法性
+        {
+            DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
+            if(deviceStatus.Status!=0x0F)
+            {
+                array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));
+                deviceCount++;
+            }
+        }
+    }
+    return array;
+}
+
+QByteArray DeviceManager::getDeviceStat(int deviceAddress, int &deviceCount)
+{
+    QByteArray array;
+    deviceCount = 0;
+
+    for(auto it = devices.begin(); it != devices.end(); ++it)
+    {
+        if(it.value() != nullptr) // 检查指针合法性
+        {
+            if(deviceAddress == 0 || (it.key() & 0x0F) == deviceAddress) // 优先级修正
+            {
+                DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
+                array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));
+                deviceCount++;
+                if(deviceAddress != 0) // 如果找到指定设备，直接返回
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return array;
+}
+
 
 //保存到数据库
 int DeviceManager::saveStat(const DeviceStatusInfo &deviceIndo)
@@ -72,9 +122,9 @@ void DeviceManager::saveDeviceStatSignals(int statID,const QMap<QString,CanDataV
 //获取设备列表
 void DeviceManager::getDeviceLists()
 {
-    for(const CanDataFormat &device:canDataList)
+    for(const CanDataFormat &device:canReader.getCanDataList())
     {
-        DeviceStat *deviceStat=new DeviceStat;
+        DeviceStat *deviceStat=new DeviceStat(this);
         connect(deviceStat,&DeviceStat::sig_WorkTimeRecord,this,&DeviceManager::recordWorkTime);
         connect(deviceStat,&DeviceStat::sig_StatChanged,this,&DeviceManager::StatWorkChange);
         devices[device.id]=deviceStat;

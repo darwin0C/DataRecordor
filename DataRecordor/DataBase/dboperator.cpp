@@ -44,16 +44,16 @@ bool DbOperator::insertDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeIn
 ///******************************************/
 
 // 更新函数实现
-bool DbOperator::updateAlarmInfo(const AlarmInfo &alarmInfo) {
-    return dbManipulation.updateAlarmInfo(alarmInfo);
+bool DbOperator::updateAlarmInfo(int id,const AlarmInfo &alarmInfo) {
+    return dbManipulation.updateAlarmInfo(id,alarmInfo);
 }
 
-bool DbOperator::updateGunMoveData(const GunMoveData &gunMoveData) {
-    return dbManipulation.updateGunMoveData(gunMoveData);
+bool DbOperator::updateGunMoveData(int id,const GunMoveData &gunMoveData) {
+    return dbManipulation.updateGunMoveData(id,gunMoveData);
 }
 
-bool DbOperator::updateGunFiringData(const GunFiringData &gunFiringData) {
-    return dbManipulation.updateGunFiringData(gunFiringData);
+bool DbOperator::updateGunFiringData(int id,const GunFiringData &gunFiringData) {
+    return dbManipulation.updateGunFiringData(id,gunFiringData);
 }
 
 bool DbOperator::updateDeviceStatusInfo(const DeviceStatusInfo &statusInfo) {

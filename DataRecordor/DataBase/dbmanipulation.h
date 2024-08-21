@@ -9,17 +9,6 @@
 #include "data.h"
 #include "DeviceData.h"
 
-class TimeCondition
-{
-public:
-    TimeCondition(QDateTime _startTime,QDateTime _endTime)
-        :startTime(_startTime),endTime(_endTime)
-    {
-    }
-    QDateTime startTime;
-    QDateTime endTime;
-};
-
 class DbManipulation
 {
 
@@ -44,9 +33,9 @@ public:
     int insertDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
     bool insertDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
 
-    bool updateAlarmInfo(const AlarmInfo &alarmInfo);
-    bool updateGunMoveData(const GunMoveData &gunMoveData);
-    bool updateGunFiringData(const GunFiringData &gunFiringData);
+    bool updateAlarmInfo(int id,const AlarmInfo &alarmInfo);
+    bool updateGunMoveData(int id,const GunMoveData &gunMoveData);
+    bool updateGunFiringData(int id, const GunFiringData &gunFiringData);
     bool updateDeviceStatusInfo(const DeviceStatusInfo &statusInfo);
     bool updateDeviceErrorInfo(const DeviceErrorInfo &errorInfo);
     bool updateDeviceTotalWorkTime(const DeviceTotalWorkTime &workTimeInfo);
@@ -61,6 +50,7 @@ public:
     QList<GunFiringData> getGunFiringData(const TimeCondition *timeCondition=nullptr);
 
     bool deleteData(int index, QString id);
+
 
 private:
     bool isDbInited=false;
