@@ -43,7 +43,7 @@ public:
 
     QList<DeviceName> getDeviceNames();
     QList<DeviceErrorInfo> getDeviceErrorInfos(int statId);
-    QList<DeviceTotalWorkTime> getDeviceTotalWorkTimes(int deviceId);
+    DeviceTotalWorkTime getDeviceTotalWorkTimes(int deviceId);
     QList<GunMoveData> getGunMoveData(const TimeCondition *timeCondition=nullptr);
     QList<DeviceStatusInfo> getDeviceStatusInfos(const TimeCondition *timeCondition=nullptr);
     QList<AlarmInfo> getAlarmInfos(const TimeCondition *timeCondition=nullptr);

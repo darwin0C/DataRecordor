@@ -38,9 +38,7 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
     mySelfSocketIP="192.168.9.33";    //自己的IP
     iniSettings::Get()->getSelfNet(mySelfSocketPort);
 
-    //    netSocketPort=65111;//
-    //    netSocketIP="192.168.9.207";//
-    iniSettings::Get()->getDeviceNetData(netSocketIP,netSocketPort);
+    iniSettings::Get()->getCommandNet(netSocketIP,netSocketPort);
 
     myNetComInterface=new QMyNetCom();
     myNetComInterface->initSocket(mySelfSocketPort);
@@ -57,7 +55,7 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
     myGroupCastInterface=new QMyNetCom();
     myGroupCastInterface->initSocket(groupPort);
     myGroupCastInterface->joinGroup("225.0.0.12");
-    connect(myGroupCastInterface,SIGNAL(sendQByteArraySig(QByteArray)),this,SLOT(netDataHandle(QByteArray)));
+    //connect(myGroupCastInterface,SIGNAL(sendQByteArraySig(QByteArray)),this,SLOT(netDataHandle(QByteArray)));
     if(myGroupCastInterface->bcommandudpopen)
         myGroupCastInterface->start();
 
@@ -108,17 +106,17 @@ void ComManager::senSerialDataByCom(QByteArray array,int comIndex)
 {
     if(comIndex==0)
     {
-        if(serialCom1->isOpen)
+        if(serialCom1 && serialCom1->isOpen)
             serialCom1->sendCanMegSigHandle(array);
     }
     else if(comIndex==1)
     {
-        if(serialCom2->isOpen)
+        if(serialCom2 && serialCom2->isOpen)
             serialCom2->sendCanMegSigHandle(array);
     }
     else if(comIndex==2)
     {
-        if(serialCom3->isOpen)
+        if(serialCom3 && serialCom3->isOpen)
             serialCom3->sendCanMegSigHandle(array);
     }
 }

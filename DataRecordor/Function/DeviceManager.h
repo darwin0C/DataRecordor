@@ -6,6 +6,7 @@
 #include "data.h"
 #include "dboperator.h"
 #include "devicestat.h"
+#include "CommandData.h"
 
 class DeviceManager : public QObject
 {
@@ -15,6 +16,8 @@ public:
 
     QByteArray getDeviceStat(int deviceAddress,int &deviceCount);
     QByteArray getErrorDeviceStat(int &deviceCount);
+    QByteArray getDeviceTotalWorktime(int deviceAddress, int &deviceCount);
+    QList<DeviceStatusInfo> getHistoryDeviceStat(int deviceAddress, TimeCondition *timeConditionPtr);
 private:
     CanMsgReader canReader;
     //QList<CanDataFormat> canDataList;
@@ -28,6 +31,7 @@ private:
     int saveStat(const DeviceStatusInfo &deviceIndo);
 
 signals:
+    void sendCommandDataSig(Send2CommandData, QByteArray);
 
 private slots:
     void recordWorkTime(int deviceID);

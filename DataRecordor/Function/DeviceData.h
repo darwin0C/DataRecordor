@@ -7,11 +7,30 @@
 #include <QDateTime>
 #include "data.h"
 
+
+enum CommandCodeWord
+{
+    CMD_Code_SysTimeSet =0x07,
+    CMD_Code_Request    =0xC3,
+    CMD_Code_Report     =0xC4,
+};
+
 enum Device_Stat
 {
     Device_Stat_DisLink =0,
     Device_Stat_Normal  =0x0F,
     Device_Stat_Fault   =0xFF
+};
+
+enum DataFlagToSend
+{
+    DataFlag_Attribute      =0,
+    DataFlag_WorkStat       =1,
+    DataFlag_AlarmInfo      =2,
+    DataFlag_TotalWorkTime  =3,
+    DataFlag_GunMoveData    =4,
+    DataFlag_GunshootData   =5,
+    DataFlag_AllData        =0xFF,
 };
 
 struct CanSignal {
@@ -49,6 +68,11 @@ typedef struct
     unsigned char  ti_sec   ;//0-59
     unsigned char  ti_hund  ;//用毫秒/10表示 0-99
 } LongDateTime;
+
+struct SelfAttributeData {
+    quint16 attribute   ;// 本车属性
+    quint32 uniqueID    ;// 本车唯一ID
+};
 
 struct DeviceStatus {
     quint8 deviceAddress;// 设备地址

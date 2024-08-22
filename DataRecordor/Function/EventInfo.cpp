@@ -10,8 +10,9 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     canReader.readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
 
     getEventList();
-
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
+    connect(&alarmTimer,&QTimer::timeout,this,&EventInfo::alarmOntimeHandle);
+    alarmTimer.start(2000);
     test();
 }
 void EventInfo::test()
@@ -74,6 +75,9 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
         gunMoveData.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
         gunMoveData.autoAdjustmentStatus=dataMap["GunMoveStat"].value.toUInt();
         saveGunMovedata();
+        if(isAutoSendEnabled)
+            emit sendCommandDataSig(DataFlag_GunMoveData, QByteArray(reinterpret_cast<const char*>(&gunMoveData), sizeof(GunMoveData)));
+
     }
     else if(sigName=="ShootDone")
     {
@@ -94,20 +98,31 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
     }
     else if(sigName=="NuclearBioAlarm")//核生化报警
     {
-        AlarmInfo alarmInfo;
-        alarmInfo.alarmContent=0;
-        alarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
-        alarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt()& 0xFFFF;
-        saveAlarmInfo(alarmInfo);
+        nuclearBioAlarmCount=0;
+
+        nuclearBioAlarmInfo.alarmContent=0;
+        nuclearBioAlarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
+        nuclearBioAlarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt()& 0xFFFF;
+        saveAlarmInfo(nuclearBioAlarmInfo);
     }
     else if(sigName=="FireExtinguishSuppressAlarm")//灭火抑爆报警
     {
-        AlarmInfo alarmInfo;
-        alarmInfo.alarmContent=1;
-        alarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
-        alarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt() & 0xFF;
-        saveAlarmInfo(alarmInfo);
+        fireSuppressAlarmCount=0;
+
+        fireSuppressBioAlarmInfo.alarmContent=1;
+        fireSuppressBioAlarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
+        fireSuppressBioAlarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt() & 0xFF;
+        saveAlarmInfo(fireSuppressBioAlarmInfo);
     }
+}
+
+void EventInfo::setAutoReport(bool enable)
+{
+    isAutoSendEnabled=enable;
+    //    if(isAutoSendEnabled)
+    //        alarmTimer.start(2000);
+    //    else
+    //        alarmTimer.stop();
 }
 
 void EventInfo::onTimeout()
@@ -115,9 +130,43 @@ void EventInfo::onTimeout()
     if(isInitSpeedreceived)
     {
         saveGunFiringData();
+        if(isAutoSendEnabled)
+            emit sendCommandDataSig(DataFlag_GunshootData, QByteArray(reinterpret_cast<const char*>(&gunFiringData), sizeof(GunFiringData)));
         isInitSpeedreceived=false;
     }
 }
+//定时上报报警状态
+void EventInfo::alarmOntimeHandle()
+{
+    nuclearBioAlarmCount++;
+    fireSuppressAlarmCount++;
+
+    QByteArray dataArray=getCurrentAlarmData();
+    if(!dataArray.isEmpty() && isAutoSendEnabled)
+        emit sendCommandDataSig(DataFlag_AlarmInfo, dataArray);
+}
+
+QByteArray EventInfo::getCurrentAlarmData()
+{
+    QByteArray dataArray;
+    quint8 alarmCount=0;
+    if(nuclearBioAlarmCount<5)
+    {
+        alarmCount++;
+        dataArray.append(QByteArray(reinterpret_cast<const char*>(&nuclearBioAlarmInfo), sizeof(AlarmInfo)));
+    }
+    if(fireSuppressAlarmCount<5)
+    {
+        alarmCount++;
+        dataArray.append(QByteArray(reinterpret_cast<const char*>(&fireSuppressBioAlarmInfo), sizeof(AlarmInfo)));
+    }
+    if(alarmCount>0)
+    {
+        dataArray.prepend(alarmCount);
+    }
+    return dataArray;
+}
+
 
 void EventInfo::saveGunMovedata()
 {
@@ -131,4 +180,27 @@ void EventInfo::saveGunFiringData()
 void EventInfo::saveAlarmInfo(const AlarmInfo &alarmInfo)
 {
     DbOperator::Get()->insertAlarmInfo(alarmInfo);
+}
+
+GunMoveData EventInfo::getGunMoveData()
+{
+    return gunMoveData;
+}
+
+GunFiringData EventInfo::getGunFiringData()
+{
+    return gunFiringData;
+}
+
+
+//获取历史调炮数据
+QList<GunMoveData> EventInfo::getHistoryGunMoveData(TimeCondition *timeConditionPtr)
+{
+    return DbOperator::Get()->getGunMoveData(timeConditionPtr);
+}
+
+//获取历史射击数据
+QList<GunFiringData> EventInfo::getHistoryGunFiringData(TimeCondition *timeConditionPtr)
+{
+    return DbOperator::Get()->getGunFiringData(timeConditionPtr);
 }

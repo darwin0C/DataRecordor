@@ -86,7 +86,7 @@ QList<DeviceErrorInfo> DbOperator::getDeviceErrorInfos(int statId) {
     return dbManipulation.getDeviceErrorInfos(statId);
 }
 
-QList<DeviceTotalWorkTime> DbOperator::getDeviceTotalWorkTimes(int deviceId) {
+DeviceTotalWorkTime DbOperator::getDeviceTotalWorkTimes(int deviceId) {
     return dbManipulation.getDeviceTotalWorkTimes(deviceId);
 }
 

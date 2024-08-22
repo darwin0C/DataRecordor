@@ -151,8 +151,8 @@ void RecordManager::delOldestFile(void)
         QFileInfo fileInfo_server(path_vec[0]);
         QDateTime tempModifiedTime=fileInfo_server.lastModified().toLocalTime();
         filename=path_vec[0];
-        QVector<QString>::iterator iter;
-        for (iter=path_vec.begin();iter!=path_vec.end();iter++)
+        //QVector<QString>::iterator iter;
+        for (auto iter=path_vec.begin();iter!=path_vec.end();iter++)
         {
             QFileInfo fileInfo_server(*iter);
             QDateTime lastModifiedTime =fileInfo_server.lastModified().toLocalTime();

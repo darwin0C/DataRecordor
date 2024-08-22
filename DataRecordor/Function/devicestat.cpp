@@ -1,10 +1,11 @@
 #include "devicestat.h"
-
+#include "dboperator.h"
 
 const int MaxDisLinkTime=5;
 
-DeviceStat::DeviceStat(QObject *parent) : QObject(parent)
+DeviceStat::DeviceStat(int deviceId,QObject *parent) : QObject(parent)
 {
+    thisDeviceID=deviceId & 0xFF;
     mytimer=new QTimer();
     connect(mytimer,SIGNAL(timeout()),this,SLOT(timerStatHandle()));
     mytimer->start(1000);
@@ -15,6 +16,8 @@ DeviceStat::DeviceStat(QObject *parent) : QObject(parent)
     lastDeviceStat.dateTime=TimeFormatTrans::getLongDataTime(QDateTime::currentDateTime());
 
     qRegisterMetaType<DeviceStatusInfo>("DeviceStatusInfo");//自定义类型需要先注册
+
+    deviceTotalWorkTime=DbOperator::Get()->getDeviceTotalWorkTimes(thisDeviceID);
 }
 
 bool DeviceStat::refreshStat(const DeviceStatusInfo &Stat)
@@ -63,6 +66,7 @@ void DeviceStat::recoardWorkTime(QDateTime endTime)
     {
         emit sig_WorkTimeRecord(lastDeviceStat.deviceStatus.deviceAddress);
         workTime=0;
+        deviceTotalWorkTime.totalWorkTime++;
     }
 }
 
@@ -74,4 +78,8 @@ int DeviceStat::LinkStat()
 DeviceStatusInfo DeviceStat::workStatus()
 {
     return lastDeviceStat;
+}
+DeviceTotalWorkTime DeviceStat::deviceWorkTime()
+{
+    return deviceTotalWorkTime;
 }

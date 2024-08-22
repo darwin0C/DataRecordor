@@ -55,50 +55,6 @@ void DeviceManager::processCanData(const CanData &data)
     }
 }
 
-QByteArray DeviceManager::getErrorDeviceStat(int &deviceCount)
-{
-    QByteArray array;
-    deviceCount = 0;
-    for(auto it = devices.begin(); it != devices.end(); ++it)
-    {
-        if(it.value() != nullptr) // 检查指针合法性
-        {
-            DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
-            if(deviceStatus.Status!=0x0F)
-            {
-                array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));
-                deviceCount++;
-            }
-        }
-    }
-    return array;
-}
-
-QByteArray DeviceManager::getDeviceStat(int deviceAddress, int &deviceCount)
-{
-    QByteArray array;
-    deviceCount = 0;
-
-    for(auto it = devices.begin(); it != devices.end(); ++it)
-    {
-        if(it.value() != nullptr) // 检查指针合法性
-        {
-            if(deviceAddress == 0 || (it.key() & 0x0F) == deviceAddress) // 优先级修正
-            {
-                DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
-                array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));
-                deviceCount++;
-                if(deviceAddress != 0) // 如果找到指定设备，直接返回
-                {
-                    break;
-                }
-            }
-        }
-    }
-    return array;
-}
-
-
 //保存到数据库
 int DeviceManager::saveStat(const DeviceStatusInfo &deviceIndo)
 {
@@ -124,7 +80,7 @@ void DeviceManager::getDeviceLists()
 {
     for(const CanDataFormat &device:canReader.getCanDataList())
     {
-        DeviceStat *deviceStat=new DeviceStat(this);
+        DeviceStat *deviceStat=new DeviceStat(device.id,this);
         connect(deviceStat,&DeviceStat::sig_WorkTimeRecord,this,&DeviceManager::recordWorkTime);
         connect(deviceStat,&DeviceStat::sig_StatChanged,this,&DeviceManager::StatWorkChange);
         devices[device.id]=deviceStat;
@@ -198,4 +154,91 @@ bool DeviceManager::loadAndInsertDevicesFromXml(const QString &xmlFilePath) {
     }
     file.close();
     return true;
+}
+
+//获取当前故障设备信息
+QByteArray DeviceManager::getErrorDeviceStat(int &deviceCount)
+{
+    QByteArray array;
+    deviceCount = 0;
+    for(auto it = devices.begin(); it != devices.end(); ++it)
+    {
+        if(it.value() != nullptr) // 检查指针合法性
+        {
+            DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
+            if(deviceStatus.Status!=0x0F)
+            {
+                array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));
+                deviceCount++;
+            }
+        }
+    }
+    return array;
+}
+
+//根据设备地址获取设备信息
+QByteArray DeviceManager::getDeviceStat(int deviceAddress, int &deviceCount)
+{
+    QByteArray array;
+    deviceCount = 0;
+
+    for(auto it = devices.begin(); it != devices.end(); ++it)
+    {
+        if(it.value() != nullptr) // 检查指针合法性
+        {
+            if(deviceAddress == 0 || (it.key() & 0xFF) == deviceAddress) // 优先级修正
+            {
+                DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
+                array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));
+                deviceCount++;
+                if(deviceAddress != 0) // 如果找到指定设备，直接返回
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return array;
+}
+
+//根据设备地址获取设备故障信息
+QList<DeviceStatusInfo> DeviceManager::getHistoryDeviceStat(int deviceAddress,TimeCondition *timeConditionPtr)
+{
+    QList<DeviceStatusInfo> statInfoList;
+    QList<DeviceStatusInfo> statInfoListTemp= dbOperator->getDeviceStatusInfos(timeConditionPtr);
+    for(const DeviceStatusInfo &statInfo:statInfoListTemp)
+    {
+        if(deviceAddress==0 || deviceAddress==statInfo.deviceStatus.deviceAddress)
+        {
+            statInfoList.append(statInfo);
+        }
+
+    }
+    return statInfoList;
+}
+
+
+//根据设备地址获取设备累计工作时间
+QByteArray DeviceManager::getDeviceTotalWorktime(int deviceAddress, int &deviceCount)
+{
+    QByteArray array;
+    deviceCount = 0;
+
+    for(auto it = devices.begin(); it != devices.end(); ++it)
+    {
+        if(it.value() != nullptr) // 检查指针合法性
+        {
+            if(deviceAddress == 0 || (it.key() & 0xFF) == deviceAddress) // 优先级修正
+            {
+                DeviceTotalWorkTime deviceWorkTime = it.value()->deviceWorkTime();
+                array.append(QByteArray(reinterpret_cast<const char*>(&deviceWorkTime), sizeof(DeviceTotalWorkTime)));
+                deviceCount++;
+                if(deviceAddress != 0) // 如果找到指定设备，直接返回
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return array;
 }
