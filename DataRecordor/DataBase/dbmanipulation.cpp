@@ -44,7 +44,7 @@ void DbManipulation::initial(QString path){
     dbMap[DB_GunShootInfo]=("GunShootInfo");
 
 
-    if(!openDb())
+    if(openDb())
     {
         for(auto it=dbMap.begin();it!=dbMap.end();++it)
         {
@@ -639,25 +639,25 @@ QList<DeviceErrorInfo> DbManipulation::getDeviceErrorInfos(int statId) {
 
     return errorList;
 }
-QList<DeviceTotalWorkTime> DbManipulation::getDeviceTotalWorkTimes(int deviceId) {
+DeviceTotalWorkTime DbManipulation::getDeviceTotalWorkTimes(int deviceId) {
     openDb();
-    QList<DeviceTotalWorkTime> workTimeList;
+    DeviceTotalWorkTime workTimeInfo;
     QSqlQuery query(database);
     query.prepare(QString("SELECT device_id, total_worktime FROM %1 WHERE device_id = :device_id").arg(dbMap[DB_Equ_TotalWorkTime]));
     query.bindValue(":device_id", deviceId);
 
     if (query.exec()) {
-        while (query.next()) {
-            DeviceTotalWorkTime workTimeInfo;
+        if (query.next()) {
+
             workTimeInfo.deviceId = query.value(0).toInt();          // 获取 device_id
             workTimeInfo.totalWorkTime = query.value(1).toInt();     // 获取 total_worktime
-            workTimeList.append(workTimeInfo);
+            //workTimeList.append(workTimeInfo);
         }
     } else {
         qDebug() << "Query failed:" << query.lastError();
     }
 
-    return workTimeList;
+    return workTimeInfo;
 }
 
 QList<AlarmInfo> DbManipulation::getAlarmInfos(const TimeCondition *timeCondition) {

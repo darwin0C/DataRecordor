@@ -9,12 +9,13 @@ class DeviceStat : public QObject
 {
     Q_OBJECT
 public:
-    explicit DeviceStat(QObject *parent = nullptr);
+    explicit DeviceStat(int deviceId,QObject *parent = nullptr);
 
     void deviceDataHandle(uint id,unsigned char *buff);
     int LinkStat();
     bool refreshStat(const DeviceStatusInfo &Stat);
     DeviceStatusInfo workStatus();
+    DeviceTotalWorkTime deviceWorkTime();
 private slots:
     void timerStatHandle();
 private:
@@ -24,6 +25,8 @@ private:
     int LinkCount;
     Device_Stat DeviceLinkStat;
     DeviceStatusInfo lastDeviceStat;
+    int thisDeviceID;
+    DeviceTotalWorkTime deviceTotalWorkTime;
     // 获取当前时间作为起始时间点
     QDateTime startTime;
 
