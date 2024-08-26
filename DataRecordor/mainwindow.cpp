@@ -73,6 +73,8 @@ MainWindow::~MainWindow()
     StatusTimerThread->deleteLater();
     ledTimerThread->terminate();
     ledTimerThread->deleteLater();
+    commandThread->terminate();
+    commandThread->deleteLater();
     delete ui;
 }
 

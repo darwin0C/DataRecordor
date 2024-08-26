@@ -22,19 +22,12 @@ DESTDIR=./bin
 TARGET=DataRecordor
 
 SOURCES += \
-    FileSave/qfilesavethead.cpp \
-    FileSave/recordManager.cpp \
     main.cpp \
-    mainwindow.cpp \
-    settings/inisettings.cpp
+    mainwindow.cpp
 
 HEADERS += \
-    FileSave/FileSaveData.h \
-    FileSave/qfilesavethead.h \
-    FileSave/recordManager.h \
     data.h \
-    mainwindow.h \
-    settings/inisettings.h
+    mainwindow.h
 
 FORMS += \
     mainwindow.ui
@@ -48,3 +41,5 @@ include($$PWD/Com/ComManager.pri)
 include($$PWD/Function/Function.pri)
 include($$PWD/CanEdit/CanEdit.pri)
 include($$PWD/DataBase/DataBase.pri)
+include($$PWD/FileSave/FileSave.pri)
+include($$PWD/Settings/Settings.pri)
