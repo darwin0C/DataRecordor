@@ -1,7 +1,7 @@
 #include "devicestat.h"
 #include "dboperator.h"
 
-const int MaxDisLinkTime=5;
+const int MaxDisLinkTime=25;
 
 DeviceStat::DeviceStat(int deviceId,QObject *parent) : QObject(parent)
 {
@@ -20,15 +20,17 @@ DeviceStat::DeviceStat(int deviceId,QObject *parent) : QObject(parent)
     deviceTotalWorkTime=DbOperator::Get()->getDeviceTotalWorkTimes(thisDeviceID);
 }
 
-bool DeviceStat::refreshStat(const DeviceStatusInfo &Stat)
+bool DeviceStat::refreshStat(DeviceStatusInfo Stat)
 {
     LinkCount=0;
+    qDebug()<<"thisDeviceID:"<<QString::number(thisDeviceID,16);
     recoardWorkTime(TimeFormatTrans::getDateTime(Stat.dateTime));
-    if(lastDeviceStat.deviceStatus.Status!=Stat.deviceStatus.Status)
+    quint8 Status=lastDeviceStat.deviceStatus.Status ;// 设备状态
+    memcpy(&lastDeviceStat,&Stat,sizeof (DeviceStatusInfo));
+    if(Status!=Stat.deviceStatus.Status)
     {
         DeviceLinkStat=(Device_Stat)Stat.deviceStatus.Status;
-        memcpy(&lastDeviceStat,&Stat,sizeof (DeviceStatusInfo));
-        //emit sig_StatChanged(lastDeviceStat);
+        //memcpy(&lastDeviceStat,&Stat,sizeof (DeviceStatusInfo));
         return true;
     }
     return false;

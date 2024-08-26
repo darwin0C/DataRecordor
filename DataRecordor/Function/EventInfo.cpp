@@ -13,7 +13,7 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
     connect(&alarmTimer,&QTimer::timeout,this,&EventInfo::alarmOntimeHandle);
     alarmTimer.start(2000);
-    test();
+   // test();
 }
 void EventInfo::test()
 {

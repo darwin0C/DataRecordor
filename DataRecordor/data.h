@@ -10,6 +10,8 @@ const QString Event_CANDataFile="/settings/CAN_Event.cdb" ; //总线协议
 
 const QString GlobSettingFile="/settings/setting.ini" ; //总线协议
 
+const QString gPath="D:/dataSave/";
+
 #pragma pack(1)  //内存1字节对齐
 
 typedef struct

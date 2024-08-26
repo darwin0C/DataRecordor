@@ -7,6 +7,7 @@ const int MinPacketLength = 26;
 QMyCom::QMyCom(QObject *parent):
     QThread(parent)
 {
+
     mySeriCom=new QSerialPort(this);
     connect(mySeriCom, &QSerialPort::readyRead, this, &QMyCom::reciveComData);
     isOpen=false;
@@ -66,7 +67,7 @@ void QMyCom::reciveComData()
     QByteArray tempData = mySeriCom->readAll();
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        qDebug()<<"data rev:"<<tempData.toHex();
+        //qDebug()<<"data rev:"<<tempData.toHex();
     }
 }
 

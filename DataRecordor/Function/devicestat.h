@@ -13,7 +13,7 @@ public:
 
     void deviceDataHandle(uint id,unsigned char *buff);
     int LinkStat();
-    bool refreshStat(const DeviceStatusInfo &Stat);
+    bool refreshStat(DeviceStatusInfo Stat);
     DeviceStatusInfo workStatus();
     DeviceTotalWorkTime deviceWorkTime();
 private slots:

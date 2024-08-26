@@ -35,9 +35,9 @@ private:
     QThread* ledTimerThread;
     QTimer *timerStatus;
     QThread* StatusTimerThread;
-    CommandCtrol commandCtrol;
-
-    void sendData();
+    CommandCtrol *commandCtrol;
+    QThread* commandThread;
+    //void sendData();
 
     void startRecord();
     void blankLED();
@@ -45,6 +45,7 @@ private:
 
     void startLEDThread();
     void startStatus();
+    void startCommandCtrl();
 signals:
     void sendCanData(CanDataBody);
 };

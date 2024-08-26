@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     startRecord();
     startLEDThread();
     startStatus();
+    startCommandCtrl();
 }
 
 void MainWindow::startLEDThread()
@@ -56,6 +57,14 @@ void MainWindow::startStatus()
     // 启动线程
     StatusTimerThread->start();
 }
+void MainWindow::startCommandCtrl()
+{
+    commandCtrol=new CommandCtrol();
+    commandThread= new QThread(this);
+    // 将定时器移动到新线程
+    commandCtrol->moveToThread(commandThread);
+    commandThread->start();
+}
 
 
 MainWindow::~MainWindow()
@@ -86,22 +95,23 @@ void MainWindow::startRecord()
     mySaveDataThread->setPriority(QThread::HighestPriority);
 }
 
-void MainWindow::sendData()
-{
-    static long long index=1;
-    if(mySaveDataThread!=NULL)
-    {
-        CanDataBody canData;
-        canData.dateTime=QDateTime::currentDateTime();
-        canData.dataid=0x12345678;
 
-        memcpy(canData.data,&index,8);
-        //canData.data={};
-        qDebug()<<canData.dateTime.toString("yyyy-MM-dd HH:mm:ss.zzz");
-        emit sendCanData(canData);
-        index++;
-    }
-}
+//void MainWindow::sendData()
+//{
+//    static long long index=1;
+//    if(mySaveDataThread!=NULL)
+//    {
+//        CanDataBody canData;
+//        canData.dateTime=QDateTime::currentDateTime();
+//        canData.dataid=0x12345678;
+
+//        memcpy(canData.data,&index,8);
+//        //canData.data={};
+//        qDebug()<<canData.dateTime.toString("yyyy-MM-dd HH:mm:ss.zzz");
+//        emit sendCanData(canData);
+//        index++;
+//    }
+//}
 
 void MainWindow::on_pushButton_2_clicked()
 {

@@ -11,7 +11,7 @@
 #include "FileSave/FileSaveData.h"
 #include "data.h"
 #include <QVector>
-const QString gPath="D:/dataSave/";
+
 
 const int diskMinFree=200*1024;
 

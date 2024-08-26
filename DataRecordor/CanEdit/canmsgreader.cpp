@@ -137,7 +137,7 @@ QMap<QString,CanDataValue> CanMsgReader::parseCanData(const QByteArray &canFrame
         qDebug() << "No matching CAN message found for ID:" << canId;
         return valueList;
     }
-    qDebug() << "Parsing CAN message:" << canData.msgName << "with ID:" << canData.id;
+    //qDebug() << "Parsing CAN message:" << canData.msgName << "with ID:" << canData.id;
 
     // 解析每个信号
     for (const CanSignal &signal : canData.canSignals)
@@ -161,10 +161,10 @@ QMap<QString,CanDataValue> CanMsgReader::parseCanData(const QByteArray &canFrame
         physicalValue = physicalValue * signal.factor + signal.offset;
 
         // 输出解析结果
-        qDebug() << " Signal Name:" << signal.name
-                 << " Value:" << physicalValue
-                 <<signal.valueTable[physicalValue]
-                   << " Unit:" << signal.unit;
+        //        qDebug() << " Signal Name:" << signal.name
+        //                 << " Value:" << physicalValue
+        //                 <<signal.valueTable[physicalValue]
+        //                   << " Unit:" << signal.unit;
         CanDataValue dataValue;
         dataValue.value=physicalValue;
         dataValue.valueDescription=signal.valueTable[physicalValue];

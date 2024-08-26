@@ -14,10 +14,10 @@ DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
     dbOperator=DbOperator::Get();
     QString deviceNameFile=QCoreApplication::applicationDirPath()+DeviceNameFile;
     loadAndInsertDevicesFromXml(deviceNameFile);
-
+    qRegisterMetaType<CanData>("CanData");
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&DeviceManager::processCanData);
 
-    test();
+    //test();
 }
 
 void DeviceManager::test()
@@ -37,13 +37,16 @@ void DeviceManager::processCanData(const CanData &data)
     if(!devices.contains(data.dataid))
         return;
     QMap<QString,CanDataValue> dataMap= canReader.getValues(data);
-    qDebug()<<"dataMap"<<dataMap.count();
+    if(data.dataid==0x0CF1A1CB)
+        qDebug()<<"CanData stat rev:"<<QTime::currentTime().toString("HH:mm:ss.zzz")
+               <<QString::number(data.dataid,16)
+              <<QByteArray((char *)data.data,8).toHex();
 
     DeviceStatusInfo deviceIndo;
     deviceIndo.dateTime=TimeFormatTrans::convertToLongDateTime(data.dateTime);
     deviceIndo.deviceStatus.Status=dataMap["WorkStatus"].value.toUInt();
     deviceIndo.deviceStatus.deviceAddress=data.dataid & 0xFF;
-
+    qDebug()<<"deviceIndo.deviceStatus.Status:"<<deviceIndo.deviceStatus.Status;
     memcpy( &deviceIndo.deviceStatus.faultInfo,data.data+1,7);
 
     //判断状态是否变化
@@ -80,6 +83,7 @@ void DeviceManager::getDeviceLists()
 {
     for(const CanDataFormat &device:canReader.getCanDataList())
     {
+        qDebug()<<"device.id"<<QString::number(device.id,16);
         DeviceStat *deviceStat=new DeviceStat(device.id,this);
         connect(deviceStat,&DeviceStat::sig_WorkTimeRecord,this,&DeviceManager::recordWorkTime);
         connect(deviceStat,&DeviceStat::sig_StatChanged,this,&DeviceManager::StatWorkChange);
@@ -186,7 +190,7 @@ QByteArray DeviceManager::getDeviceStat(int deviceAddress, int &deviceCount)
     {
         if(it.value() != nullptr) // 检查指针合法性
         {
-            if(deviceAddress == 0 || (it.key() & 0xFF) == deviceAddress) // 优先级修正
+            if(deviceAddress == 0 || (it.key() & 0xFF) == deviceAddress) //
             {
                 DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
                 array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));

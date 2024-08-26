@@ -25,9 +25,9 @@ QString RecordManager::getRecordData(SerialDataRev dataRev)
             .arg(dataRev.candata.dateTime.second,2,10,QLatin1Char('0'))
             .arg(dataRev.candata.dateTime.msec,3,10,QLatin1Char('0'));
 
-    can_id=QString("%1").arg(dataRev.candata.dataid,8,16,QLatin1Char('0'));
+    can_id=QString("%1").arg(dataRev.candata.dataid,8,16,QLatin1Char('0')).toUpper();
     QByteArray array((char *)dataRev.candata.data,8);
-    can_data=array.toHex();
+    can_data=array.toHex().toUpper();
 
     dateSave=QString("%1 ,prot:%2 : ID:%3, data:%4\n")
             .arg(time)
