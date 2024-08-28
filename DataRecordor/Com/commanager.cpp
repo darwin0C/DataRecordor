@@ -4,7 +4,7 @@
 #include <QDir>
 #include <QSettings>
 #include <QSerialPortInfo>
-#include "settings/inisettings.h"
+#include "inisettings.h"
 #include "MsgSignals.h"
 
 

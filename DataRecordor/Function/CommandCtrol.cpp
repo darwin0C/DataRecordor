@@ -1,7 +1,7 @@
 #include "CommandCtrol.h"
 #include "MsgSignals.h"
 #include "commanager.h"
-#include "settings/inisettings.h"
+#include "inisettings.h"
 
 CommandCtrol::CommandCtrol(QObject *parent) : QObject(parent)
 {
@@ -18,37 +18,48 @@ void CommandCtrol::initData()
     selfUniqueID= iniSettings::Get()->getSelfUniqueID();
 }
 
-void CommandCtrol::dataHandle(QByteArray array)
+void CommandCtrol::dataHandle(int cmdCode,QByteArray array)
 {
     quint32 len=array.size();
     if(len==0)
         return;
-    int cmdCode=array[0];
-    if(cmdCode==CMD_Code_SysTimeSet)//系统授时（射击初始条件）
-    {
+    switch (cmdCode) {
+    case CMD_Code_SysTimeSet://系统授时（射击初始条件）
         if (len >= sizeof(TimeSetCMD))
         {
             TimeSetCMD commandData;
             memcpy(&commandData, array.constData(), sizeof(TimeSetCMD));
             sysTimeSetHandle(commandData);
         }
-    }
-    else if(cmdCode==CMD_Code_Request)//查询火炮综合信息命令
-    {
+        break;
+    case CMD_Code_Request://查询火炮综合信息命令
         if (len >= sizeof(CommandDataRequre))
         {
             CommandDataRequre commandData;
             memcpy(&commandData, array.constData(), sizeof(CommandDataRequre));
             dataRequreHandle(commandData);
         }
+        break;
+    case CMD_Code_SetAttribute://设置属性指令
+        if (len >= sizeof(SelfAttributeData))
+        {
+            SelfAttributeData commandData;
+            memcpy(&commandData, array.constData(), sizeof(SelfAttributeData));
+            setAttributeHandle(commandData);
+        }
+        break;
     }
+
 }
 
+//系统授时（射击初始条件）
 void CommandCtrol::sysTimeSetHandle(const TimeSetCMD &commandData)
 {
+    Q_UNUSED(commandData);
 
 }
 
+//处理指令查询命令
 void CommandCtrol::dataRequreHandle(const CommandDataRequre &commandData)
 {
     if(commandData.msgReportCtrl==1)
@@ -73,6 +84,13 @@ void CommandCtrol::dataRequreHandle(const CommandDataRequre &commandData)
     }
 }
 
+void CommandCtrol::setAttributeHandle(const SelfAttributeData &commandData)
+{
+    selfAttribute=commandData.attribute;
+    selfUniqueID= commandData.uniqueID;
+    iniSettings::Get()->setAttribute(selfAttribute);
+    iniSettings::Get()->setUniqueID(selfUniqueID);
+}
 
 void CommandCtrol::sendHistoryDataToCommand(int dataFlag,int deviceAddress,TimeCondition *timeConditionPtr)
 {

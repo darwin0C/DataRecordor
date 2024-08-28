@@ -22,8 +22,6 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_pushButton_clicked();
-
     void on_pushButton_2_clicked();
 
     void timerUpdate();
@@ -37,7 +35,6 @@ private:
     QThread* StatusTimerThread;
     CommandCtrol *commandCtrol;
     QThread* commandThread;
-    //void sendData();
 
     void startRecord();
     void blankLED();

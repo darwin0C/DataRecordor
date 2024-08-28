@@ -15,7 +15,7 @@ enum DataTypeToSend
 
 typedef struct
 {
-    quint8 commandCod       ;//命令字
+    //quint8 commandCod       ;//命令字
     quint8 rev[48]          ;//其它信息	48字节
     unsigned char  ti_min   ;//0-59
     unsigned char  ti_hour  ;//0-23
@@ -29,7 +29,7 @@ typedef struct
 
 typedef struct
 {
-    quint8 commandCod       ;//命令字
+    //quint8 commandCod       ;//命令字
     quint8 msgReportCtrl    ;//信息上报控制
     quint8 requreData       ;//查询内容
     quint8 deviceAddress    ;//设备地址

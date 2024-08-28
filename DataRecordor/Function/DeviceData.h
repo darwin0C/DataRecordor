@@ -10,9 +10,10 @@
 
 enum CommandCodeWord
 {
-    CMD_Code_SysTimeSet =0x07,
-    CMD_Code_Request    =0xC3,
-    CMD_Code_Report     =0xC4,
+    CMD_Code_SysTimeSet     =0x07,
+    CMD_Code_Request        =0xC3,
+    CMD_Code_Report         =0xC4,
+    CMD_Code_SetAttribute   =0x01B0
 };
 
 enum Device_Stat

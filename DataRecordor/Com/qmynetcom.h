@@ -56,7 +56,7 @@ public:
 
     void initSocket(QString ip, uint port);
     int sendData(unsigned char *data, int len, QString ip, int port);
-    void commandDataHandle(char *buff,ushort dlen);
+
 
     bool joinGroup(QString udpGroup);
 signals:
@@ -71,6 +71,8 @@ private:
     int Verify_Sum(unsigned char *sBytes, int iBytesCount);
     int Verify_Sum2(unsigned char *sBytes, int iBytesCount);
     int Verify_SumLow8(unsigned char *sBytes, int iBytesCount);
+    void eb90commandDataHandle(char *buff,ushort dlen);
+    void eb48commandDataHandle(char *buff, ushort dlen);
 };
 
 #endif // QMYNETCOM_H

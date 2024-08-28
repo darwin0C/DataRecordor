@@ -23,7 +23,7 @@ public:
 signals:
     void canDataSig(CanData);
     void serialDataSig(SerialDataRev);
-    void commandDataSig(QByteArray);
+    void commandDataSig(int,QByteArray);
 private:
     // 构造函数私有化，确保外部无法直接创建对象
     MsgSignals() {}

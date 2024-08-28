@@ -32,10 +32,11 @@ private:
     void sendHistoryDataToCommand(int dataFlag, int deviceAddress, TimeCondition *timeConditionPtr);
     void sendHisData(Send2CommandData sendData, int dataFlag, int deviceAddress, TimeCondition *timeConditionPtr);
     void initData();
+    void setAttributeHandle(const SelfAttributeData &commandData);
 signals:
 
 private slots:
-    void dataHandle(QByteArray array);
+    void dataHandle(int cmdCode,QByteArray array);
     void timeStatHandle();
     void sendCommandData(Send2CommandData sendData, QByteArray dataArray);
     void autoSendCommandDataHandle(int dataFlag, QByteArray dataArray);

@@ -78,10 +78,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
-{
-
-}
 
 void MainWindow::startRecord()
 {
@@ -97,23 +93,6 @@ void MainWindow::startRecord()
     mySaveDataThread->setPriority(QThread::HighestPriority);
 }
 
-
-//void MainWindow::sendData()
-//{
-//    static long long index=1;
-//    if(mySaveDataThread!=NULL)
-//    {
-//        CanDataBody canData;
-//        canData.dateTime=QDateTime::currentDateTime();
-//        canData.dataid=0x12345678;
-
-//        memcpy(canData.data,&index,8);
-//        //canData.data={};
-//        qDebug()<<canData.dateTime.toString("yyyy-MM-dd HH:mm:ss.zzz");
-//        emit sendCanData(canData);
-//        index++;
-//    }
-//}
 
 void MainWindow::on_pushButton_2_clicked()
 {
