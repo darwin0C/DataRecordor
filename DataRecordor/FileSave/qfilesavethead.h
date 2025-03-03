@@ -51,6 +51,7 @@ public:
 public slots:
     void revCANData(CanDataBody canData);
     void revSerialData(SerialDataRev serialData);
+    void delAllFiles();
 protected:
     virtual void run() override;
 private slots:

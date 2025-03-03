@@ -8,8 +8,8 @@
 #include "data.h"
 
 //用于侦察车侦察终端与指挥之间的通信协议
-#define   SelfAddrCode    0xE5
-#define   CommandAdrrCode 0xE0
+//#define   SelfAddrCode    0xE5
+//#define   CommandAdrrCode 0xE0
 #define   ComUnitAdrrCode 0xE2
 #define   systemAdrrCode  0xE9
 #define   GPSAdrrCode 0xE4

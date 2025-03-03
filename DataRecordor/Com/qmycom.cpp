@@ -166,31 +166,31 @@ void QMyCom::sendCanMegSigHandle(QByteArray array )
 }
 //发送函数
 //	短包通用传输函数 8字节内容以内的
-int QMyCom::sendData(uint canID,uchar *buff,unsigned char len)
-{
-    Q_ASSERT(mySeriCom!=NULL);
-    //if (mycom==NULL)  return -3;
-    uchar *buf=new uchar[len+8];
-    buf[0]=0x09;
-    buf[1]=len+8;
-    buf[2]=canID&0xff;
-    buf[3]=canID>>8&0xff;
-    buf[4]=canID>>16&0xff;
-    buf[5]=canID>>24&0xff;
-    if(len>0)
-        memcpy(buf+6,buff,len);
-    buf[len+6]=0;
-    buf[len+7]=0x0D;
-    for (short i=1;i<len+6;i++)
-        buf[len+6]^=buf[i];
-    int  a=mySeriCom->write((char *)buf,len+8);
-    delete[] buf;
-    return a;
-}
-//	短包通用传输函数 8字节内容以内的
-int QMyCom::sendData(char *buff,int len)
-{
-    Q_ASSERT(mySeriCom!=NULL);
-    return mySeriCom->write(buff,len);
-}
+//int QMyCom::sendData(uint canID,uchar *buff,unsigned char len)
+//{
+//    Q_ASSERT(mySeriCom!=NULL);
+//    //if (mycom==NULL)  return -3;
+//    uchar *buf=new uchar[len+8];
+//    buf[0]=0x09;
+//    buf[1]=len+8;
+//    buf[2]=canID&0xff;
+//    buf[3]=canID>>8&0xff;
+//    buf[4]=canID>>16&0xff;
+//    buf[5]=canID>>24&0xff;
+//    if(len>0)
+//        memcpy(buf+6,buff,len);
+//    buf[len+6]=0;
+//    buf[len+7]=0x0D;
+//    for (short i=1;i<len+6;i++)
+//        buf[len+6]^=buf[i];
+//    int  a=mySeriCom->write((char *)buf,len+8);
+//    delete[] buf;
+//    return a;
+//}
+////	短包通用传输函数 8字节内容以内的
+//int QMyCom::sendData(char *buff,int len)
+//{
+//    Q_ASSERT(mySeriCom!=NULL);
+//    return mySeriCom->write(buff,len);
+//}
 

@@ -1,6 +1,7 @@
 #include "qmynetcom.h"
 #include  <QThread>
 #include "MsgSignals.h"
+#include "inisettings.h"
 
 #define DataHeadEB   0xEB
 #define DataHead90   0x90
@@ -60,6 +61,7 @@ void QMyNetCom::run()
 }
 void QMyNetCom::netDataHandle()
 {
+    quint16 SelfAddrCode=iniSettings::Instance()->getSelfAttribute();
     while(myNetRx->InUseCount()>NetDataPacketLength)  //最短包的长度
     {
         uchar buff[8]={0};
@@ -201,9 +203,10 @@ void QMyNetCom::eb90commandDataHandle(char *buff,ushort dlen)
     QByteArray byteArray(buff,dlen);
     int start = 7;  // 第8位 命令参数开始
     int length = byteArray.size() - 8;  // 计算长度
+    qint8 sendCode=byteArray[5];
     int cmdCode=byteArray[6];
     QByteArray result = byteArray.mid(start, length);
-    emit MsgSignals::getInstance()->commandDataSig(cmdCode,result);
+    emit MsgSignals::getInstance()->commandDataSig(sendCode,cmdCode,result);
     qDebug() << result;  //
 }
 void QMyNetCom::eb48commandDataHandle(char *buff,ushort dlen)
@@ -213,9 +216,10 @@ void QMyNetCom::eb48commandDataHandle(char *buff,ushort dlen)
     QByteArray byteArray(buff,dlen);
     int start = 10;  // 命令参数开始
     int length = byteArray.size() - 11;  // 计算长度
-    int cmdCode=byteArray[9]<<8|byteArray[8];//命令字
+    quint16 sendCode=byteArray[7]<<8|byteArray[6];//发站码
+    quint16 cmdCode=byteArray[9]<<8|byteArray[8];//命令字
 
     QByteArray result = byteArray.mid(start, length);
-    emit MsgSignals::getInstance()->commandDataSig(cmdCode,result);
+    emit MsgSignals::getInstance()->commandDataSig(sendCode,cmdCode,result);
     qDebug() << result;  //
 }

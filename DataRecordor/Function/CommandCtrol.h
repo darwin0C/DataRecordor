@@ -20,7 +20,8 @@ private:
     EventInfo eventInfo;
 
     quint16 selfAttribute;
-    quint32 selfUniqueID;
+    QString selfUniqueID;
+    quint16 commandCode=0xE0;
 
     void setAutoReport(bool enable);
     void sysTimeSetHandle(const TimeSetCMD &commandData);
@@ -33,10 +34,11 @@ private:
     void sendHisData(Send2CommandData sendData, int dataFlag, int deviceAddress, TimeCondition *timeConditionPtr);
     void initData();
     void setAttributeHandle(const SelfAttributeData &commandData);
+    bool stringToCharArray(const QString &source, char *dest, int maxSize);
 signals:
 
 private slots:
-    void dataHandle(int cmdCode,QByteArray array);
+    void dataHandle(quint16 sendCode,quint16 cmdCode,QByteArray array);
     void timeStatHandle();
     void sendCommandData(Send2CommandData sendData, QByteArray dataArray);
     void autoSendCommandDataHandle(int dataFlag, QByteArray dataArray);

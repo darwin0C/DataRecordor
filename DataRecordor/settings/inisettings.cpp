@@ -58,7 +58,7 @@ void iniSettings::loadAttribute(QSettings *mysetting)
     else
     {
         mysetting->setValue("Self_UniqueID","123456");
-        selfUniqueID=123456;
+        selfUniqueID="123456";
     }
 
     mysetting->endGroup();
@@ -129,7 +129,7 @@ QString iniSettings::getSysPassWord()
      return selfAttribute;
  }
 
- quint32 iniSettings::getSelfUniqueID()
+ QString iniSettings::getSelfUniqueID()
  {
      return selfUniqueID;
  }
@@ -151,7 +151,7 @@ void iniSettings::setCircleNum(int circle)
 }
 
 
-void iniSettings::setAttribute(quint16 attribute)
+void iniSettings::setAttribute(quint16 attribute,QString uniqueId)
 {
     QFile file(filePath);
     QSettings *mysetting=new QSettings(filePath,QSettings::IniFormat);
@@ -159,20 +159,12 @@ void iniSettings::setAttribute(quint16 attribute)
     mysetting->beginGroup("ATTRIBUTE");
     mysetting->setValue("Self_Attribute",attribute);
     selfAttribute=attribute;
-    mysetting->endGroup();
-    delete mysetting;
-    mysetting=NULL;
-}
 
-void iniSettings::setUniqueID(quint32 uniqueId)
-{
-    QFile file(filePath);
-    QSettings *mysetting=new QSettings(filePath,QSettings::IniFormat);
-
-    mysetting->beginGroup("ATTRIBUTE");
     mysetting->setValue("Self_UniqueID",uniqueId);
     selfUniqueID=uniqueId;
+
     mysetting->endGroup();
     delete mysetting;
     mysetting=NULL;
 }
+

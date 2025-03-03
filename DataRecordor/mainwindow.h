@@ -8,6 +8,8 @@
 #include "data.h"
 #include "commanager.h"
 #include "CommandCtrol.h"
+#include <QTcpServer>
+#include <QTcpSocket>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -26,6 +28,9 @@ private slots:
 
     void timerUpdate();
     void timerSendStatus();
+    void ServerNewConnection();
+    void socket_Read_Data();
+    void socket_Disconnected();
 private:
     Ui::MainWindow *ui;
     ComManager *com=nullptr;
@@ -36,6 +41,10 @@ private:
     CommandCtrol *commandCtrol;
     QThread* commandThread;
 
+    QTcpServer* mp_TCPServer;
+    QTcpSocket* mp_TCPSocket;
+    void socket_Send_Data(QString dataSend);
+
     void startRecord();
     void blankLED();
     void sendData(QByteArray dataArray);
@@ -45,5 +54,6 @@ private:
     void startCommandCtrl();
 signals:
     void sendCanData(CanDataBody);
+    void delAllFilesSig();
 };
 #endif // MAINWINDOW_H

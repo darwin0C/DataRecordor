@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QTimer>
 #include "MsgSignals.h"
+#include "qmycancomm.h"
+#include "inisettings.h"
 EventInfo::EventInfo(QObject *parent) : QObject(parent)
 {
     QString deviceStatFile=QCoreApplication::applicationDirPath()+Event_CANDataFile;
@@ -13,7 +15,9 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
     connect(&alarmTimer,&QTimer::timeout,this,&EventInfo::alarmOntimeHandle);
     alarmTimer.start(2000);
-   // test();
+    connect(QmyCanComm::instance(),&QmyCanComm::CanDataReady,this,&EventInfo::canLongDataHandle);
+
+   //test();
 }
 void EventInfo::test()
 {
@@ -33,9 +37,11 @@ void EventInfo::test()
     processCanData(data);
     data.dataid=0x0CF08634;
     processCanData(data);
+    //0x0C8768CB
 }
 void EventInfo::processCanData(const CanData &data)
 {
+    deviceDataHandle(data);
     if(!eventList.contains(data.dataid))
         return;
     QMap<QString,CanDataValue> dataMap= canReader.getValues(data);
@@ -50,7 +56,54 @@ void EventInfo::getEventList()
         eventList[canData.id]=canData.msgName;
     }
 }
+void EventInfo::deviceDataHandle(const CanData &data)
+{
+    switch(data.dataid)
+    {
+    case  0x1CECFF68:    //导航数据	广播公告
+        GunnerBroadcastRTSDataHandle(data.dataid,(uchar *)data.data);
+        break;
+    case  0x1CEBFF68:    //导航数据	广播数据
+        GunnerBroadcastDTDataHandle((uchar *)data.data);
+        break;
+    case  0x1CEC8968:    //长包点对点的CTS
+        GunnerP2PLongDataCTSData(data.dataid,(uchar *)data.data);
+        break;
+    }
+}
+//接受惯导广播公告数据
+void EventInfo::GunnerBroadcastRTSDataHandle(unsigned int canID,uchar *buff)
+{
+    QmyCanComm::instance()->recieveLinkDataHandle(canID,buff);
+}
+//接受惯导广播数据处理
+void EventInfo::GunnerBroadcastDTDataHandle(uchar *buff)
+{
+    QmyCanComm::instance()->recieveBroadcastTM_DT(buff);
+}
+//接收长数据包点对点的CTS
+void EventInfo::GunnerP2PLongDataCTSData(uint canId,uchar *buff)
+{
+    QmyCanComm::instance()->recieveLinkDataHandle(canId,buff);
+}
 
+void EventInfo::canLongDataHandle(unsigned char *png ,unsigned char *buff ,unsigned short len ,bool bbroadcast)
+{
+    if(bbroadcast)
+    {
+        uint tem=png[0]|png[1]<<8|png[2]<<16;
+        SelfAttributeData selfAttributeData;
+        if(tem==Gunner_Property_PGN && len==sizeof(SelfAttributeData))
+        {
+            if(memcmp(&selfAttributeData,buff,sizeof(SelfAttributeData))!=0)
+            {
+                memcpy(&selfAttributeData,buff,sizeof(SelfAttributeData));
+            }
+            //emit sig_StatChanged(INUData_Navigate);
+            iniSettings::Instance()->setAttribute(selfAttributeData.attribute,selfAttributeData.uniqueID);
+        }
+    }
+}
 void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap,LocalDateTime dateTime )
 {
     QString sigName=eventList[dataId];
@@ -127,13 +180,36 @@ void EventInfo::setAutoReport(bool enable)
 
 void EventInfo::onTimeout()
 {
+    //接收到初速信息，主动上报射击数据
     if(isInitSpeedreceived)
     {
         saveGunFiringData();
         if(isAutoSendEnabled)
+        {
+            SendGunFiringData(gunFiringData);//发送到炮长终端
+            //发送到指挥终端
             emit sendCommandDataSig(DataFlag_GunshootData, QByteArray(reinterpret_cast<const char*>(&gunFiringData), sizeof(GunFiringData)));
+        }
         isInitSpeedreceived=false;
     }
+}
+//炮长获取射击数据
+int EventInfo::SendGunFiringData(GunFiringData gunfirngData)
+{
+    //长数据包发送先发送RTS
+    unsigned char pgn[3];
+    pgn[0]=0;
+    pgn[1]=0xFF;
+    pgn[2]=0x03;
+    //计算发送报数
+    unsigned char packets=0;//包数
+    unsigned short b=sizeof(GunFiringData);
+    if(b%7==0)
+        packets=b/7;
+    else
+        packets=b/7+1;
+    int a= QmyCanComm::instance()->sendTM_RTS(Gunner_Ctrol_LANG_ID,b,packets,pgn,(unsigned char*)&gunfirngData);
+    return a;
 }
 //定时上报报警状态
 void EventInfo::alarmOntimeHandle()

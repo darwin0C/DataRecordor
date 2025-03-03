@@ -7,6 +7,12 @@
 #include <QDateTime>
 #include "data.h"
 
+//长包指令
+#define Gunner_Ctrol_LANG_ID         0x1CEC6889
+//炮长设置属性指令
+#define Gunner_Property_PGN          0x00FF04
+//炮长获取射击数据
+#define Gunner_FiringData_PGN        0x00FF03
 
 enum CommandCodeWord
 {
@@ -71,8 +77,8 @@ typedef struct
 } LongDateTime;
 
 struct SelfAttributeData {
-    quint16 attribute   ;// 本车属性
-    quint32 uniqueID    ;// 本车唯一ID
+    quint8 attribute   ;// 本车属性
+    char uniqueID[10]    ;// 本车唯一ID
 };
 
 struct DeviceStatus {
@@ -110,7 +116,7 @@ struct GunFiringData {
     quint8 firingCompletedSignal    ;// 击发完毕信号
     quint8 recoilStatus             ;// 复进状态
     quint8 muzzleVelocityValid      ;// 初速有效标识
-    quint8 propellantTemperature    ;// 药温
+    quint16 propellantTemperature    ;// 药温
     quint16 muzzleVelocity          ;// 初速信息
 };
 

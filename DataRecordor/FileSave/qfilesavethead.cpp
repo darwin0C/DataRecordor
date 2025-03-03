@@ -241,3 +241,16 @@ bool QFileSaveThead::sdCardStat()
 {
     return recordManager.isSDCardOK;
 }
+void QFileSaveThead::delAllFiles()
+{
+    if (m_file.isOpen())
+        m_file.close();
+
+    QString del_file = gPath;
+    QDir dir;
+    if (dir.exists(del_file))
+    {
+        dir.setPath(del_file);
+        dir.removeRecursively();
+    }
+}

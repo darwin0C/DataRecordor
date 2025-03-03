@@ -15,8 +15,52 @@ MainWindow::MainWindow(QWidget *parent)
     startLEDThread();
     startStatus();
     startCommandCtrl();
-}
 
+    mp_TCPServer = new QTcpServer();
+    if(!mp_TCPServer->listen(QHostAddress::Any, 8080))
+    {
+
+    }
+    connect(mp_TCPServer, SIGNAL(newConnection()), this, SLOT(ServerNewConnection()));
+
+}
+void MainWindow::ServerNewConnection()
+{
+    mp_TCPSocket = mp_TCPServer->nextPendingConnection();
+    QString clintName=mp_TCPSocket->peerAddress().toString();
+    socket_Send_Data("connected to server\n");
+    qDebug()<<(clintName.remove(0,7));
+    QObject::connect(mp_TCPSocket, &QTcpSocket::readyRead, this, &MainWindow::socket_Read_Data);
+    QObject::connect(mp_TCPSocket, &QTcpSocket::disconnected, this, &MainWindow::socket_Disconnected);
+}
+void MainWindow::socket_Read_Data()
+{
+    QByteArray buffer;
+    //读取缓冲区数据
+    buffer = mp_TCPSocket->readAll();
+    if(!buffer.isEmpty())
+    {
+        QString dataRev=QString(buffer);
+        socket_Send_Data("received data from client: "+dataRev);
+        qDebug()<<(dataRev);
+        if(dataRev.remove(QRegExp("\\s")).toUpper()=="EF0000FFFFFCFFFF")
+        {
+          emit  delAllFilesSig();
+        }
+    }
+}
+void MainWindow::socket_Send_Data(QString dataSend)
+{
+    QByteArray ba = dataSend.toLatin1();
+    char *sendData=ba.data();
+
+    mp_TCPSocket->write(sendData);
+    mp_TCPSocket->flush();
+}
+void MainWindow::socket_Disconnected()
+{
+    qDebug()<<"socket_Disconnected ";
+}
 void MainWindow::startLEDThread()
 {
     // 创建线程实例
@@ -87,6 +131,7 @@ void MainWindow::startRecord()
 
         qRegisterMetaType<SerialDataRev>("SerialDataRev");//自定义类型需要先注册
         connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThead::revSerialData);
+         connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThead::delAllFiles);
     }
     mySaveDataThread->startRecord();
     // 设置线程的优先级为最高
@@ -181,6 +226,7 @@ void MainWindow::timerSendStatus()
 
     sendData(data);
 }
+
 void MainWindow::sendData(QByteArray dataArray)
 {
     static int comindex=0;

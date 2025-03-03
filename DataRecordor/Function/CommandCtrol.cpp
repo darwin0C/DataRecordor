@@ -14,12 +14,13 @@ CommandCtrol::CommandCtrol(QObject *parent) : QObject(parent)
 
 void CommandCtrol::initData()
 {
-    selfAttribute= iniSettings::Get()->getSelfAttribute();
-    selfUniqueID= iniSettings::Get()->getSelfUniqueID();
+    selfAttribute= iniSettings::Instance()->getSelfAttribute();
+    selfUniqueID= iniSettings::Instance()->getSelfUniqueID();
 }
 
-void CommandCtrol::dataHandle(int cmdCode,QByteArray array)
+void CommandCtrol::dataHandle(quint16 sendCode,quint16 cmdCode,QByteArray array)
 {
+    commandCode=sendCode;
     quint32 len=array.size();
     if(len==0)
         return;
@@ -87,16 +88,16 @@ void CommandCtrol::dataRequreHandle(const CommandDataRequre &commandData)
 void CommandCtrol::setAttributeHandle(const SelfAttributeData &commandData)
 {
     selfAttribute=commandData.attribute;
-    selfUniqueID= commandData.uniqueID;
-    iniSettings::Get()->setAttribute(selfAttribute);
-    iniSettings::Get()->setUniqueID(selfUniqueID);
+    selfUniqueID= QString::fromUtf8(commandData.uniqueID);
+    iniSettings::Instance()->setAttribute(selfAttribute,selfUniqueID);
 }
 
 void CommandCtrol::sendHistoryDataToCommand(int dataFlag,int deviceAddress,TimeCondition *timeConditionPtr)
 {
     Send2CommandData sendData;
-    sendData.selfAttribute=selfAttribute;
-    sendData.selfUniqueID=selfUniqueID;
+    sendData.selfAttribute=iniSettings::Instance()->getSelfAttribute();
+    //sendData.selfUniqueID=selfUniqueID;
+    stringToCharArray(iniSettings::Instance()->getSelfUniqueID(),sendData.selfUniqueID,10);
     sendData.dataType=DataType_HistoryData;
     if(dataFlag==DataFlag_AllData)//查询所有信息
     {
@@ -139,7 +140,8 @@ void CommandCtrol::SendRTDataToCommand(int dataFlag,int deviceAddress)
 {
     Send2CommandData sendData;
     sendData.selfAttribute=selfAttribute;
-    sendData.selfUniqueID=selfUniqueID;
+    //sendData.selfUniqueID=selfUniqueID;
+    stringToCharArray(selfUniqueID,sendData.selfUniqueID,10);
     sendData.dataType=DataType_RTData;
 
     if(dataFlag==DataFlag_AllData)//查询所有信息
@@ -162,13 +164,14 @@ void CommandCtrol::autoSendCommandDataHandle(int dataFlag, QByteArray dataArray)
 {
     Send2CommandData sendData;
     sendData.selfAttribute=selfAttribute;
-    sendData.selfUniqueID=selfUniqueID;
+    //sendData.selfUniqueID=selfUniqueID;
+    stringToCharArray(selfUniqueID,sendData.selfUniqueID,10);
     sendData.dataFlag=dataFlag;
     sendData.dataType=DataType_RTData;
     sendData.dataPacketIndedx=0;
     QByteArray array(reinterpret_cast<const char*>(&sendData), sizeof(Send2CommandData));
     array.append(dataArray);
-    ComManager::instance()->sendData2Command(CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
+    ComManager::instance()->sendData2Command(commandCode,CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
 }
 
 
@@ -176,7 +179,7 @@ void CommandCtrol::sendCommandData(Send2CommandData sendData, QByteArray dataArr
 {
     QByteArray array(reinterpret_cast<const char*>(&sendData), sizeof(Send2CommandData));
     array.append(dataArray);
-    ComManager::instance()->sendData2Command(CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
+    ComManager::instance()->sendData2Command(commandCode,CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
 }
 
 QByteArray CommandCtrol::requreCurrentData(int dataFlag,int deviceAddress)
@@ -187,7 +190,8 @@ QByteArray CommandCtrol::requreCurrentData(int dataFlag,int deviceAddress)
     {
         SelfAttributeData selfAttributeData;
         selfAttributeData.attribute=selfAttribute;
-        selfAttributeData.uniqueID=selfUniqueID;
+        //selfAttributeData.uniqueID=selfUniqueID;
+        stringToCharArray(selfUniqueID,selfAttributeData.uniqueID,10);
         dataArray.append(QByteArray(reinterpret_cast<const char*>(&selfAttributeData), sizeof(SelfAttributeData)));
     }
         break;
@@ -247,7 +251,8 @@ void CommandCtrol::timeStatHandle()
 {
     Send2CommandData sendData;
     sendData.selfAttribute=selfAttribute;
-    sendData.selfUniqueID=selfUniqueID;
+    //sendData.selfUniqueID=selfUniqueID;
+    stringToCharArray(selfUniqueID,sendData.selfUniqueID,10);
     sendData.dataFlag=DataFlag_WorkStat;
     sendData.dataType=DataType_RTData;
     sendData.dataPacketIndedx=0;
@@ -259,6 +264,28 @@ void CommandCtrol::timeStatHandle()
         quint8 deviceNum=count;
         array.append(deviceNum);
         array.append(statArray);
-        ComManager::instance()->sendData2Command(CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
+        ComManager::instance()->sendData2Command(commandCode,CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
     }
+}
+
+bool CommandCtrol::stringToCharArray(const QString& source, char* dest, int maxSize) {
+    // 检查参数有效性
+    if (!dest || maxSize <= 0) {
+        return false;
+    }
+
+    // 将QString转换为UTF-8编码的字节数组
+    QByteArray byteArray = source.toUtf8();
+
+    // 检查源字符串长度是否超过目标数组大小
+    if (byteArray.size() >= maxSize) {
+        // 截断到maxSize-1，留空间给结束符
+        strncpy(dest, byteArray.constData(), maxSize - 1);
+        dest[maxSize - 1] = '\0'; // 确保字符串以null终止
+    } else {
+        // 完整复制
+        strcpy(dest, byteArray.constData());
+    }
+
+    return true;
 }

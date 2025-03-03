@@ -36,9 +36,9 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
 
     //mySelfSocketPort=65110;  //自己的端口号
     mySelfSocketIP="192.168.9.33";    //自己的IP
-    iniSettings::Get()->getSelfNet(mySelfSocketPort);
+    iniSettings::Instance()->getSelfNet(mySelfSocketPort);
 
-    iniSettings::Get()->getCommandNet(netSocketIP,netSocketPort);
+    iniSettings::Instance()->getCommandNet(netSocketIP,netSocketPort);
 
     myNetComInterface=new QMyNetCom();
     myNetComInterface->initSocket(mySelfSocketPort);
@@ -77,6 +77,31 @@ QMyCom *ComManager::startSerial(QString portNum)
 ComManager::~ComManager()
 {
 
+}
+
+int ComManager::sendRecordCanData(uint canID,uchar *buff,unsigned char len)
+{
+    uchar *buf=new uchar[len+8];
+    buf[0]=0xD2;
+    buf[1]=0x0B;
+    buf[2]=0x00;//发送端口号
+    buf[3]=canID&0xff;
+    buf[4]=canID>>8&0xff;
+    buf[5]=canID>>16&0xff;
+    buf[6]=canID>>24&0xff;
+
+    if(len>0)
+        memcpy(buf+7,buff,len);
+    buf[len+7]=0;
+
+    for (short i=1;i<len+7;i++)
+        buf[len+7]+=buf[i];
+
+    QByteArray array((char *)buf,len+8);
+    senSerialDataByCom(array,buf[2]);
+
+    delete[] buf;
+    return 0;
 }
 
 int ComManager::sendCanData(uint canID,uchar *buff,unsigned char len)
@@ -133,9 +158,10 @@ int ComManager::sendSerialData(QByteArray array)
 //参数  cmdCode     应答控制字
 //参数  data        数据
 //参数  len         数据长度
-int ComManager::sendData2Command(unsigned char cmdcode,unsigned char *data,int len)
+int ComManager::sendData2Command(unsigned char reciveCode,unsigned char cmdcode,unsigned char *data,int len)
 {
     Q_ASSERT(myNetComInterface);
+    quint16 SelfAddrCode=iniSettings::Instance()->getSelfAttribute();
     //发送数据 给目的目标
     unsigned char *buff=new unsigned char[len+8]; //数据长度加上 头尾 数据长度 校验位 发站码 收站码 命令字
 
@@ -143,7 +169,7 @@ int ComManager::sendData2Command(unsigned char cmdcode,unsigned char *data,int l
     buff[1]=0x90;
     buff[2]=(len+6)&0xFF;
     buff[3]=((len+6)>>8)&0xFF;
-    buff[4]=CommandAdrrCode;
+    buff[4]=reciveCode;
     buff[5]=SelfAddrCode;
     buff[6]=cmdcode;
     memcpy(buff+7,data,len);
@@ -169,6 +195,7 @@ int ComManager::sendData2Command(unsigned char cmdcode,unsigned char *data,int l
 int ComManager::sendData2Command(unsigned char reciveCode,unsigned char cmdcode1,unsigned char cmdcode2,unsigned char *data,int len,
                                  QString ip, int port)
 {
+    quint16 SelfAddrCode=iniSettings::Instance()->getSelfAttribute();
     //发送数据 给目的目标
     unsigned char *buff=new unsigned char[len+9]; //数据长度加上 头尾 数据长度 校验位 发站码 收站码 命令字
 

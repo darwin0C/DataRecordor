@@ -12,7 +12,7 @@ class iniSettings : public QObject
     Q_OBJECT
 public:
     explicit iniSettings(QObject *parent = nullptr);
-    static iniSettings *Get()
+    static iniSettings *Instance()
     {
         static iniSettings vt;
         return &vt;
@@ -26,10 +26,9 @@ public:
 
     QString getSysPassWord();
 
-    void setAttribute(quint16 selfAttribute);
-    void setUniqueID(quint32 uniqueId);
+    void setAttribute(quint16 selfAttribute,QString uniqueId);
     quint16 getSelfAttribute();
-    quint32 getSelfUniqueID();
+    QString getSelfUniqueID();
 private:
 
     QString passWord;
@@ -45,7 +44,7 @@ private:
     QString filePath;
 
     quint16 selfAttribute;//本车属性
-    quint32 selfUniqueID;//本车唯一ID
+    QString selfUniqueID;//本车唯一ID
 
 
     void loadRadarDataFlag(QSettings *mysetting);

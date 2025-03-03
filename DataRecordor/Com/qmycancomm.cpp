@@ -63,7 +63,7 @@ QmyCanComm* QmyCanComm::instance()
 //	短包通用传输函数 8字节内容以内的
 int QmyCanComm::sendData(uint canID,uchar *buff,unsigned char len)
 {
-    return ComManager::instance()->sendCanData(canID,buff,len);
+    return ComManager::instance()->sendRecordCanData(canID,buff,len);
 }
 //发送发数rts   //发送数据失败返回-1 已建立连接则不再重发建立
 int QmyCanComm::sendTM_RTS(uint canID,unsigned short allbytes,unsigned char packets,unsigned char PGN[3],unsigned char *senddata)
@@ -90,11 +90,10 @@ int QmyCanComm::sendTM_RTS(uint canID,unsigned short allbytes,unsigned char pack
     myCanSendData->addr=canID;
     myCanSendData->datalen=allbytes;
     myCanSendData->packetsnum=packets;
-    //    if (myCanSendData->data!=NULL)
-    //    {
+
     myCanSendData->data=new unsigned char[allbytes];
     memcpy(myCanSendData->data,senddata,allbytes);
-    /*   }*/
+
     myCanSendData->pgn[0]=PGN[0];
     myCanSendData->pgn[1]=PGN[1];
     myCanSendData->pgn[2]=PGN[2];

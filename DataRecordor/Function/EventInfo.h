@@ -33,7 +33,7 @@ private:
     QTimer alarmTimer;
 
     bool isInitSpeedreceived=false;
-    bool isAutoSendEnabled=false;
+    bool isAutoSendEnabled=true;
 
     quint64 nuclearBioAlarmCount=5;
     quint64 fireSuppressAlarmCount=5;
@@ -45,10 +45,16 @@ private:
     void saveGunFiringData();
     void saveAlarmInfo(const AlarmInfo &alarmInfo);
 
+    int SendGunFiringData(GunFiringData gunfirngData);
+    void deviceDataHandle(const CanData &data);
+    void GunnerBroadcastRTSDataHandle(unsigned int canID, uchar *buff);
+    void GunnerBroadcastDTDataHandle(uchar *buff);
+    void GunnerP2PLongDataCTSData(uint canId, uchar *buff);
 private slots:
     void onTimeout();
     void processCanData(const CanData &data);
     void alarmOntimeHandle();
+    void canLongDataHandle(unsigned char *png, unsigned char *buff, unsigned short len, bool bbroadcast);
 signals:
     void sendCommandDataSig(int, QByteArray);
 };
