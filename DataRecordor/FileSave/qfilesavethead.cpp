@@ -2,7 +2,7 @@
 #include "qfilesavethead.h"
 #include <QDebug>
 #include <QTimer>
-
+#include "MsgSignals.h"
 
 QFileSaveThead::QFileSaveThead(QObject *parent)
     : QThread(parent)
@@ -57,6 +57,7 @@ void QFileSaveThead::revSerialData(SerialDataRev serialData)
 {
     if(!m_bStop)
     {
+        qDebug() << "revSerialData==========================";
         QString strData=recordManager.getRecordData(serialData);
         saveStringData(strData);
     }
@@ -162,7 +163,6 @@ void QFileSaveThead::CloseFile()
 void QFileSaveThead::ClearBuf()
 {
     QMutexLocker locker(&m_mutex);
-
     while (!m_queueDataBuffer.empty()) {
         TDataBuffer tDataBuffer = m_queueDataBuffer.dequeue();
         if (tDataBuffer.pBuffer != NULL)
@@ -194,7 +194,13 @@ void QFileSaveThead::run()
         m_usedSpace.acquire();
         if (m_bStop)
             return;
+        bool sigSend=false;
         while (!m_bStop && !m_queueDataBuffer.empty()) {
+            if(!sigSend)
+            {
+                emit MsgSignals::getInstance()->sendLEDStatSig();
+                sigSend = true;
+            }
             m_mutexQueue.lock(); //进入临界区
             TDataBuffer tDataBuffer = m_queueDataBuffer.dequeue();
             m_mutexQueue.unlock(); //离开临界区

@@ -31,6 +31,7 @@ private slots:
     void ServerNewConnection();
     void socket_Read_Data();
     void socket_Disconnected();
+    void changeLEDStat();
 private:
     Ui::MainWindow *ui;
     ComManager *com=nullptr;
@@ -40,7 +41,7 @@ private:
     QThread* StatusTimerThread;
     CommandCtrol *commandCtrol;
     QThread* commandThread;
-
+    int ledBlankTimes = 0;
     QTcpServer* mp_TCPServer;
     QTcpSocket* mp_TCPSocket;
     void socket_Send_Data(QString dataSend);

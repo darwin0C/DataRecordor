@@ -12,7 +12,7 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
 {
     QStringList Seriallist;
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
-        qDebug()<<info.portName();
+        qDebug()<<"info.portName===="<<info.portName();
         Seriallist<<info.portName();
     }
 #ifdef SERIALCOM
@@ -20,9 +20,9 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
     {
         try
         {
-            serialCom1= startSerial(Seriallist[0]);
-            serialCom2= startSerial(Seriallist[1]);
-            serialCom3= startSerial(Seriallist[0]);
+            serialCom1= startSerial(Seriallist[1]);
+            serialCom2= startSerial(Seriallist[2]);
+            serialCom3= startSerial(Seriallist[3]);
         }
         catch (std::exception &e)
         {
@@ -67,7 +67,7 @@ QMyCom *ComManager::startSerial(QString portNum)
 {
     QMyCom *serialCom=new QMyCom();
     connect(this,&ComManager::sendCanMegSig,serialCom,&QMyCom::sendCanMegSigHandle);
-    if(serialCom->initComInterface(portNum,115200))
+    if(serialCom->initComInterface(portNum,921600))
     {
         serialCom->start();
     }

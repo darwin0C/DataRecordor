@@ -52,11 +52,13 @@ public:
     int diskUsedPercent;
     int diskFree;
     bool isSDCardOK=true;
+
 signals:
     void creatFileSig(QString);
 
 private slots:
     void readDiskData();
+    void onCheckDisk();
 };
 
 #endif // RECORDTHREAD_H

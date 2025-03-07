@@ -1,13 +1,16 @@
 #include "recordManager.h"
-
+#include <QDebug>
+#include "MsgSignals.h"
 RecordManager::RecordManager()
 {
     process = new QProcess(this);
     connect(process, SIGNAL(readyRead()), this, SLOT(readDiskData()));
+    connect(MsgSignals::getInstance(),&MsgSignals::sendCheckDiskSig,this,&RecordManager::onCheckDisk);
 }
 
 QString RecordManager::getRecordData(SerialDataRev dataRev)
 {
+    qDebug() << "getRecordData==========================";
     QString dateSave;
 
     QString date,time,can_id,can_data;
@@ -53,6 +56,7 @@ void RecordManager::checkTime(QString date,QString time)
         revTime=time.left(2);
     }
     fileMutex.lock();
+    qDebug()<<"<<<<<<<<<if(isSDCardOK)=========";
     if(isSDCardOK)
     {
         if(revTime.length()>=2)
@@ -209,6 +213,7 @@ void RecordManager::delAllFiles(void)
 }
 void RecordManager::creatNewFile(QString date,QString time)
 {
+    qDebug()<<"<<<<<<<<<creatNewFile=========";
     QFileInfo currntFile(gCurrentfileName);
     if(date!=currentDate || time!=currentTime||!currntFile.exists())
     {
@@ -226,6 +231,7 @@ void RecordManager::newfile(QString date,QString time)
         dir.mkpath(fileDir);
     }
     QString fileName=fileDir+"/ebd_can_"+time.left(2);
+    qDebug()<<"<<<<<<<<<fileName="<<fileName;
     QString finalFileName;
     static int index=0;
     QFile *myFile=new QFile(fileName+".txt");
@@ -246,6 +252,11 @@ void RecordManager::newfile(QString date,QString time)
 
     emit creatFileSig(finalFileName);
     process->start("df -k");
+}
+void RecordManager::onCheckDisk()
+{
+     process->start("df -k");
+
 }
 QByteArray RecordManager::HexStringToByteArray(QString HexString)
 {

@@ -2,7 +2,6 @@
 #include <QDebug>
 #include  "qmycom.h"
 #include "commanager.h"
-
 QmyCanComm  *QmyCanComm::myInuCanCom=NULL;
 
 QmyCanComm:: QmyCanComm(QObject *parent): QObject(parent)
