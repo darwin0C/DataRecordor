@@ -131,7 +131,7 @@ void MainWindow::startRecord()
 
         qRegisterMetaType<SerialDataRev>("SerialDataRev");//自定义类型需要先注册
         connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThead::revSerialData);
-         connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThead::delAllFiles);
+        connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThead::delAllFiles);
     }
     mySaveDataThread->startRecord();
     // 设置线程的优先级为最高

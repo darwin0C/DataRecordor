@@ -162,6 +162,7 @@ void QFileSaveThead::CloseFile()
 void QFileSaveThead::ClearBuf()
 {
     QMutexLocker locker(&m_mutex);
+
     while (!m_queueDataBuffer.empty()) {
         TDataBuffer tDataBuffer = m_queueDataBuffer.dequeue();
         if (tDataBuffer.pBuffer != NULL)

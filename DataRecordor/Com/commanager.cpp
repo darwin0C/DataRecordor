@@ -20,9 +20,9 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
     {
         try
         {
-            serialCom1= startSerial("COM1");
-            serialCom2= startSerial("COM4");
-            serialCom3= startSerial("COM7");
+            serialCom1= startSerial(Seriallist[0]);
+            serialCom2= startSerial(Seriallist[1]);
+            serialCom3= startSerial(Seriallist[0]);
         }
         catch (std::exception &e)
         {
