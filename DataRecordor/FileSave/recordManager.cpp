@@ -10,7 +10,7 @@ RecordManager::RecordManager()
 
 QString RecordManager::getRecordData(SerialDataRev dataRev)
 {
-    qDebug() << "getRecordData==========================";
+    //qDebug() << "getRecordData==========================";
     QString dateSave;
 
     QString date,time,can_id,can_data;
@@ -56,7 +56,7 @@ void RecordManager::checkTime(QString date,QString time)
         revTime=time.left(2);
     }
     fileMutex.lock();
-    qDebug()<<"<<<<<<<<<if(isSDCardOK)=========";
+    //qDebug()<<"<<<<<<<<<if(isSDCardOK)=========";
     if(isSDCardOK)
     {
         if(revTime.length()>=2)
@@ -213,7 +213,7 @@ void RecordManager::delAllFiles(void)
 }
 void RecordManager::creatNewFile(QString date,QString time)
 {
-    qDebug()<<"<<<<<<<<<creatNewFile=========";
+    //qDebug()<<"<<<<<<<<<creatNewFile=========";
     QFileInfo currntFile(gCurrentfileName);
     if(date!=currentDate || time!=currentTime||!currntFile.exists())
     {

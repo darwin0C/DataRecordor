@@ -57,7 +57,7 @@ void QFileSaveThead::revSerialData(SerialDataRev serialData)
 {
     if(!m_bStop)
     {
-        qDebug() << "revSerialData==========================";
+        //qDebug() << "revSerialData==========================";
         QString strData=recordManager.getRecordData(serialData);
         saveStringData(strData);
     }

@@ -67,7 +67,7 @@ void QMyCom::reciveComData()
     QByteArray tempData = mySeriCom->readAll();
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        qDebug()<<"data rev:"<<tempData.toHex();
+        //qDebug()<<"data rev:"<<tempData.toHex();
     }
 }
 
@@ -95,12 +95,12 @@ void QMyCom::comDataHandle()
             myComRxBuff->MoveReadP(1);
             continue;
         }
-        qDebug() << "comDataHandle==========================";
+
         if (andCheck(tembuff,MinPacketLength)) //判断收到的数据是否正确
         {
             myComRxBuff->Get(&stFromOPCData,MinPacketLength);
             memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
-            qDebug() << "emit serialDataSig==========================";
+            //qDebug() << "emit serialDataSig==========================";
             emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
             emit MsgSignals::getInstance()->canDataSig(CanDataRev);
         }else
@@ -162,7 +162,6 @@ int QMyCom::commFrameXorNohead(	unsigned char *pBuf,
 }
 void QMyCom::sendCanMegSigHandle(QByteArray array )
 {
-    qDebug()<<"sendCanMegSigHandle============";
     Q_ASSERT(mySeriCom!=NULL);
     mySeriCom->write(array);
 }

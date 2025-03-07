@@ -180,12 +180,12 @@ void MainWindow::blankLED()
     {
         if(mySaveDataThread->diskRemains()<diskMinFree)
         {
-            qDebug()<<"LED red ========================"<<ledBalnkStr;
+            //qDebug()<<"LED red ========================"<<ledBalnkStr;
             ledOnStr=ledRed_on;
         }
         else if(mySaveDataThread->diskUsedPercent()>70)
         {
-            qDebug()<<"LED yellow ========================"<<ledBalnkStr;
+            //qDebug()<<"LED yellow ========================"<<ledBalnkStr;
             ledOnStr=ledYellow_on;
         }
         if(ledon)
@@ -237,7 +237,7 @@ void MainWindow::timerSendStatus()
 
 void MainWindow::sendData(QByteArray dataArray)
 {
-    qDebug()<<"sendData to CAN ===========";
+    //qDebug()<<"sendData to CAN ===========";
     static int comindex=0;
     com->senSerialDataByCom(dataArray,comindex++);
     if(comindex>=3)

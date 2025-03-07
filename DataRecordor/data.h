@@ -9,7 +9,6 @@ const QString DeviceStat_CANDataFile="/settings/CAN_DeviceStat.cdb" ; //总线�
 const QString Event_CANDataFile="/settings/CAN_Event.cdb" ; //总线协议
 
 const QString GlobSettingFile="/settings/setting.ini" ; //总线协议
-
 const QString gPath="/run/media/mmcblk0p1/data/";
 
 #pragma pack(1)  //内存1字节对齐
