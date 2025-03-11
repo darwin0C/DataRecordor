@@ -234,6 +234,8 @@ void EventInfo::alarmOntimeHandle()
 {
     nuclearBioAlarmCount++;
     fireSuppressAlarmCount++;
+    //test
+    SendGunFiringData(gunFiringData);//发送到炮长终端
 
     QByteArray dataArray=getCurrentAlarmData();
     if(!dataArray.isEmpty() && isAutoSendEnabled)

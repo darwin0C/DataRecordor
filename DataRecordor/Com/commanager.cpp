@@ -141,7 +141,7 @@ int ComManager::sendRecordCanData(uint canID, uchar *buff, unsigned char len)
     array[array.size() - 1] = static_cast<char>(checksum);
 
     // 通过数组第三个字节作为端口号发送数据
-    senSerialDataByCom(array, static_cast<uchar>(array.at(2)));
+    senSerialDataByCom(array, static_cast<uchar>(array.at(1)));
 
     return 0;
 }
@@ -176,6 +176,7 @@ void ComManager::senSerialDataByCom(QByteArray array,int comIndex)
     {
         if(serialCom1 && serialCom1->isOpen)
             serialCom1->sendCanMegSigHandle(array);
+
     }
     else if(comIndex==1)
     {

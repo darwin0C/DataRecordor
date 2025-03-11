@@ -66,6 +66,8 @@ void ensureDirectoryExists(const QString &path)
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+#ifndef OUTTOFILe
     QString path=gPath+"Log/";
     ensureDirectoryExists(path);
     QString fileName=path+"log_"+QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss")+".txt";
@@ -77,7 +79,7 @@ int main(int argc, char *argv[])
     }
     // 安装日志处理函数
     qInstallMessageHandler(customMessageHandler);
-
+#endif
     MainWindow w;
     w.show();
     return a.exec();
