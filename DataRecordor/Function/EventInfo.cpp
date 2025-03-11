@@ -17,7 +17,7 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     alarmTimer.start(2000);
     connect(QmyCanComm::instance(),&QmyCanComm::CanDataReady,this,&EventInfo::canLongDataHandle);
 
-   //test();
+    //test();
 }
 void EventInfo::test()
 {
@@ -209,24 +209,24 @@ int EventInfo::SendGunFiringData(GunFiringData gunfirngData)
     else
         packets=b/7+1;
     int a= QmyCanComm::instance()->sendTM_RTS(Gunner_Ctrol_LANG_ID,b,packets,pgn,(unsigned char*)&gunfirngData);
-   qDebug()<< "GunFiringData("
-                        << "barrelDirection: " << gunfirngData.barrelDirection << ", "
-                        << "elevationAngle: " << gunfirngData.elevationAngle << ", "
-                        << "chassisRoll: " << gunfirngData.chassisRoll << ", "
-                        << "chassisPitch: " << gunfirngData.chassisPitch << ", "
-                        << "statusChangeTime: "
-                        << gunfirngData.statusChangeTime.ti_year
-                        << gunfirngData.statusChangeTime.ti_mon
-                        << gunfirngData.statusChangeTime.ti_day
-                        << gunfirngData.statusChangeTime.ti_hour
-                        << gunfirngData.statusChangeTime.ti_min
-                        << gunfirngData.statusChangeTime.ti_sec << ", "
-                        << "firingCompletedSignal: " << static_cast<int>(gunfirngData.firingCompletedSignal) << ", "
-                        << "recoilStatus: " << static_cast<int>(gunfirngData.recoilStatus) << ", "
-                        << "muzzleVelocityValid: " << static_cast<int>(gunfirngData.muzzleVelocityValid) << ", "
-                        << "propellantTemperature: " << gunfirngData.propellantTemperature << ", "
-                        << "muzzleVelocity: " << gunfirngData.muzzleVelocity
-                        << ")";
+    qDebug()<< "GunFiringData("
+            << "barrelDirection: " << gunfirngData.barrelDirection << ", "
+            << "elevationAngle: " << gunfirngData.elevationAngle << ", "
+            << "chassisRoll: " << gunfirngData.chassisRoll << ", "
+            << "chassisPitch: " << gunfirngData.chassisPitch << ", "
+            << "statusChangeTime: "
+            << gunfirngData.statusChangeTime.ti_year
+            << gunfirngData.statusChangeTime.ti_mon
+            << gunfirngData.statusChangeTime.ti_day
+            << gunfirngData.statusChangeTime.ti_hour
+            << gunfirngData.statusChangeTime.ti_min
+            << gunfirngData.statusChangeTime.ti_sec << ", "
+            << "firingCompletedSignal: " << static_cast<int>(gunfirngData.firingCompletedSignal) << ", "
+            << "recoilStatus: " << static_cast<int>(gunfirngData.recoilStatus) << ", "
+            << "muzzleVelocityValid: " << static_cast<int>(gunfirngData.muzzleVelocityValid) << ", "
+            << "propellantTemperature: " << gunfirngData.propellantTemperature << ", "
+            << "muzzleVelocity: " << gunfirngData.muzzleVelocity
+            << ")";
     return a;
 }
 //定时上报报警状态
@@ -234,7 +234,10 @@ void EventInfo::alarmOntimeHandle()
 {
     nuclearBioAlarmCount++;
     fireSuppressAlarmCount++;
-
+    //test
+#ifdef TEST_MODE
+    SendGunFiringData(gunFiringData);//发送到炮长终端
+#endif
     QByteArray dataArray=getCurrentAlarmData();
     if(!dataArray.isEmpty() && isAutoSendEnabled)
         emit sendCommandDataSig(DataFlag_AlarmInfo, dataArray);

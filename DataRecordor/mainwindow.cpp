@@ -45,7 +45,7 @@ void MainWindow::socket_Read_Data()
         qDebug()<<(dataRev);
         if(dataRev.remove(QRegExp("\\s")).toUpper()=="EF0000FFFFFCFFFF")
         {
-          emit  delAllFilesSig();
+            emit  delAllFilesSig();
         }
     }
 }
@@ -136,7 +136,7 @@ void MainWindow::startRecord()
 
         qRegisterMetaType<SerialDataRev>("SerialDataRev");//自定义类型需要先注册
         connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThead::revSerialData);
-         connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThead::delAllFiles);
+        connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThead::delAllFiles);
     }
     mySaveDataThread->startRecord();
     emit MsgSignals::getInstance()->sendCheckDiskSig();
@@ -222,7 +222,7 @@ unsigned char calculateCheckCode(SerialDataSend* data)
 }
 void MainWindow::timerSendStatus()
 {
-     emit MsgSignals::getInstance()->sendCheckDiskSig();
+    emit MsgSignals::getInstance()->sendCheckDiskSig();
     // 字节和校验函数（计算校验码）
     SerialDataSend dataToSend;
     memset(&dataToSend,0,sizeof(SerialDataSend));
