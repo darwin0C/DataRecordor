@@ -32,7 +32,7 @@ HEADERS += \
 FORMS += \
     mainwindow.ui
 
-#DEFINES += LINUX_MODE
+DEFINES += LINUX_MODE
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

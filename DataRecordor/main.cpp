@@ -66,8 +66,9 @@ void ensureDirectoryExists(const QString &path)
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    ensureDirectoryExists(gPath);
-    QString fileName=gPath+"log_"+QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss")+".txt";
+    QString path=gPath+"Log/";
+    ensureDirectoryExists(path);
+    QString fileName=path+"log_"+QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss")+".txt";
     // 设置日志文件路径
     logFile.setFileName(fileName);
     if (!logFile.open(QIODevice::Append | QIODevice::Text)) {

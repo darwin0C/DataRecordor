@@ -66,7 +66,7 @@ typedef struct
 #pragma pack()
 
 const QString ledGreen_on = "echo 1 > /sys/class/gpio/gpio1/value";
-const QString ledRed_on = "echo 1 > /sys/class/gpio/gpio2/value";
+const QString ledRed_on = "echo 0 > /sys/class/gpio/gpio1/value;echo 1 > /sys/class/gpio/gpio2/value";
 const QString ledYellow_on="echo 1 > /sys/class/gpio/gpio1/value;echo 1 > /sys/class/gpio/gpio2/value";
 const QString led_off = "echo 0 > /sys/class/gpio/gpio1/value;echo 0 > /sys/class/gpio/gpio2/value";
 

@@ -43,7 +43,7 @@ bool CanMsgReader::readCanDataFromXml(const QString& fileName) {
             CanDataFormat canData;
             canData.id = messageElement.attribute("ID").toInt(nullptr, 16);
             canData.msgName = messageElement.attribute("Name");
-
+            qDebug()<<"messageNode"<<canData.id<<canData.msgName;
             // 解析每个 Signal 节点
             QDomNode signalNode = messageElement.firstChild();
             while (!signalNode.isNull()) {

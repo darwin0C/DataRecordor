@@ -99,10 +99,12 @@ void RecordManager::readDiskData()
             isSDCardOK=true;
             break;
         }
+         isSDCardOK=false;
     }
 }
 void RecordManager::checkSize(const QString &result)
 {
+    //qDebug()<<"checkSize"<<result;
     QString dev, use, free, all;
     diskUsed=0;
     diskAll=0;
@@ -255,6 +257,7 @@ void RecordManager::newfile(QString date,QString time)
 }
 void RecordManager::onCheckDisk()
 {
+    //qDebug()<<"onCheckDisk";
      process->start("df -k");
 
 }

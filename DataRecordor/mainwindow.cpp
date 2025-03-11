@@ -208,6 +208,7 @@ void MainWindow::blankLED()
     QByteArray cmdby_heartbeat = ledBalnkStr.toLatin1();
     char* charCmd_heartbeat = cmdby_heartbeat.data();
     system(charCmd_heartbeat);
+    //qDebug()<<"blankLED"<<charCmd_heartbeat;
 #endif
 }
 unsigned char calculateCheckCode(SerialDataSend* data)
@@ -221,6 +222,7 @@ unsigned char calculateCheckCode(SerialDataSend* data)
 }
 void MainWindow::timerSendStatus()
 {
+     emit MsgSignals::getInstance()->sendCheckDiskSig();
     // 字节和校验函数（计算校验码）
     SerialDataSend dataToSend;
     memset(&dataToSend,0,sizeof(SerialDataSend));
