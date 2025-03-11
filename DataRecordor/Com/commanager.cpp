@@ -20,9 +20,15 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
     {
         try
         {
+#ifdef LINUX_MODE
             serialCom1= startSerial(Seriallist[1]);
             serialCom2= startSerial(Seriallist[2]);
             serialCom3= startSerial(Seriallist[3]);
+#else
+            serialCom1= startSerial(Seriallist[1]);
+            serialCom2= startSerial(Seriallist[3]);
+            serialCom3= startSerial(Seriallist[5]);
+#endif
         }
         catch (std::exception &e)
         {
@@ -129,12 +135,12 @@ int ComManager::sendRecordCanData(uint canID, uchar *buff, unsigned char len)
     // 计算校验和：累加从第二个字节开始到校验位之前的所有字节
     // 注意：使用 QByteArray 的 constBegin() 与 constEnd() 返回的迭代器
     uchar checksum = static_cast<uchar>(std::accumulate(
-        array.constBegin() + 1,       // 从下标1开始
-        array.constEnd() - 1,         // 到倒数第二个字节（即最后一位校验位之前）
-        0,
-        [](int sum, char c) {
-            return sum + static_cast<uchar>(c);
-        }
+                                            array.constBegin() + 1,       // 从下标1开始
+                                            array.constEnd() - 1,         // 到倒数第二个字节（即最后一位校验位之前）
+                                            0,
+                                            [](int sum, char c) {
+        return sum + static_cast<uchar>(c);
+    }
     ));
 
     // 设置校验和到最后一个字节（append 占位的那一位）

@@ -162,7 +162,9 @@ int QMyCom::commFrameXorNohead(	unsigned char *pBuf,
 }
 void QMyCom::sendCanMegSigHandle(QByteArray array )
 {
-    qDebug()<<"sendCanMegSigHandle"<<array.toHex();
+
+    //qDebug()<<"sendCanMegSigHandle"<<array.toHex();
+
     Q_ASSERT(mySeriCom!=NULL);
     mySeriCom->write(array);
 }

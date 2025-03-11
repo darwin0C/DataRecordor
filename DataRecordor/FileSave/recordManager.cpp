@@ -257,8 +257,10 @@ void RecordManager::newfile(QString date,QString time)
 }
 void RecordManager::onCheckDisk()
 {
-    //qDebug()<<"onCheckDisk";
+    qDebug()<<"onCheckDisk";
+#ifdef LINUX_MODE
      process->start("df -k");
+#endif
 
 }
 QByteArray RecordManager::HexStringToByteArray(QString HexString)
