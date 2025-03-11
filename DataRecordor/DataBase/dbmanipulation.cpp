@@ -43,7 +43,6 @@ void DbManipulation::initial(QString path){
     dbMap[DB_GunMoveInfo]=("GunMoveInfo");
     dbMap[DB_GunShootInfo]=("GunShootInfo");
 
-
     if(openDb())
     {
         for(auto it=dbMap.begin();it!=dbMap.end();++it)
@@ -160,7 +159,7 @@ void DbManipulation::createTable(int index)
     if(createCmd!="")
         if(!query.exec(createCmd))
         {
-            qDebug()<<"creat table failed:"<<dbMap[index]<<query.lastError();
+            //qDebug()<<"creat table failed:"<<dbMap[index]<<query.lastError();
         }
 }
 

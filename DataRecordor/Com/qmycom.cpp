@@ -113,7 +113,7 @@ bool QMyCom::andCheck(unsigned char *pBuf, unsigned int FrameSize) {
         return false; // 如果帧大小为 0，直接返回 false
     }
     unsigned char sum = 0;
-    // 对所有字节（除最后一个字节外）进行求和
+    // 对所有字节（除第一个最后一个字节外）进行求和
     for (unsigned int i = 1; i < FrameSize - 1; ++i) {
         sum += pBuf[i];
     }

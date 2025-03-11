@@ -79,28 +79,70 @@ ComManager::~ComManager()
 
 }
 
-int ComManager::sendRecordCanData(uint canID,uchar *buff,unsigned char len)
+//int ComManager::sendRecordCanData(uint canID,uchar *buff,unsigned char len)
+//{
+//    uchar *buf=new uchar[len+8];
+//    buf[0]=0xD2;
+//    buf[1]=0x0B;
+//    buf[2]=0x00;//发送端口号
+//    buf[3]=canID&0xff;
+//    buf[4]=canID>>8&0xff;
+//    buf[5]=canID>>16&0xff;
+//    buf[6]=canID>>24&0xff;
+
+//    if(len>0)
+//        memcpy(buf+7,buff,len);
+//    buf[len+7]=0;
+
+//    for (short i=1;i<len+7;i++)
+//        buf[len+7]+=buf[i];
+
+//    QByteArray array((char *)buf,len+8);
+//    senSerialDataByCom(array,buf[2]);
+
+//    delete[] buf;
+//    return 0;
+//}
+int ComManager::sendRecordCanData(uint canID, uchar *buff, unsigned char len)
 {
-    uchar *buf=new uchar[len+8];
-    buf[0]=0xD2;
-    buf[1]=0x0B;
-    buf[2]=0x00;//发送端口号
-    buf[3]=canID&0xff;
-    buf[4]=canID>>8&0xff;
-    buf[5]=canID>>16&0xff;
-    buf[6]=canID>>24&0xff;
+    QByteArray array;
+    //array.reserve(len + 8);
 
-    if(len>0)
-        memcpy(buf+7,buff,len);
-    buf[len+7]=0;
+    // 依次追加各个字段（append 自动管理下标）
+    array.append(static_cast<char>(0xD2));
+    //array.append(static_cast<char>(0x0B));
+    array.append(static_cast<char>(0x00)); // 发送端口号
 
-    for (short i=1;i<len+7;i++)
-        buf[len+7]+=buf[i];
+    // 将 canID 按小端字节顺序追加（减少手动角标操作）
+    array.append(static_cast<char>(canID & 0xFF));
+    array.append(static_cast<char>((canID >> 8) & 0xFF));
+    array.append(static_cast<char>((canID >> 16) & 0xFF));
+    array.append(static_cast<char>((canID >> 24) & 0xFF));
 
-    QByteArray array((char *)buf,len+8);
-    senSerialDataByCom(array,buf[2]);
+    // 追加数据缓冲区
+    if (len > 0)
+        array.append(reinterpret_cast<const char*>(buff), len);
 
-    delete[] buf;
+    // 预先追加一个占位字节，用于存放校验和
+    array.append('\0');
+
+    // 计算校验和：累加从第二个字节开始到校验位之前的所有字节
+    // 注意：使用 QByteArray 的 constBegin() 与 constEnd() 返回的迭代器
+    uchar checksum = static_cast<uchar>(std::accumulate(
+        array.constBegin() + 1,       // 从下标1开始
+        array.constEnd() - 1,         // 到倒数第二个字节（即最后一位校验位之前）
+        0,
+        [](int sum, char c) {
+            return sum + static_cast<uchar>(c);
+        }
+    ));
+
+    // 设置校验和到最后一个字节（append 占位的那一位）
+    array[array.size() - 1] = static_cast<char>(checksum);
+
+    // 通过数组第三个字节作为端口号发送数据
+    senSerialDataByCom(array, static_cast<uchar>(array.at(2)));
+
     return 0;
 }
 
