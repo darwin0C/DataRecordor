@@ -67,13 +67,15 @@ struct CanDataValue {
 
 typedef struct
 {
+    unsigned char  ti_min   ;//0-59
+    unsigned char  ti_hour  ;//0-23
+    unsigned char  ti_hund  ;//用毫秒/10表示 0-99
+    unsigned char  ti_sec   ;//0-59
+
     unsigned short ti_year  ;//1900-2100
     unsigned char  ti_mon   ;//1-12
     unsigned char  ti_day   ;//1-31
-    unsigned char  ti_hour  ;//0-23
-    unsigned char  ti_min   ;//0-59
-    unsigned char  ti_sec   ;//0-59
-    unsigned char  ti_hund  ;//用毫秒/10表示 0-99
+
 } LongDateTime;
 
 struct SelfAttributeData {
@@ -107,11 +109,16 @@ struct GunMoveData {
     quint8 autoAdjustmentStatus     ;// 自动调炮状态
 };
 
-struct GunFiringData {
+struct GunAttitudeData
+{
     quint16 barrelDirection         ;// 身管方向
     quint16 elevationAngle          ;// 俯仰角
     quint16 chassisRoll             ;// 底盘横倾姿态数据
     quint16 chassisPitch            ;// 底盘纵倾姿态数据
+};
+
+struct GunFiringData {
+    GunAttitudeData attitudeData;
     LongDateTime statusChangeTime   ;// 状态变化时刻
     quint8 firingCompletedSignal    ;// 击发完毕信号
     quint8 recoilStatus             ;// 复进状态
@@ -119,6 +126,7 @@ struct GunFiringData {
     quint16 propellantTemperature    ;// 药温
     quint16 muzzleVelocity          ;// 初速信息
 };
+
 
 struct DeviceTotalWorkTime {
     int deviceId        ;// 设备ID

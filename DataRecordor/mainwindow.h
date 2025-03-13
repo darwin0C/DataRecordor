@@ -53,6 +53,8 @@ private:
     void startLEDThread();
     void startStatus();
     void startCommandCtrl();
+    void sendtestData();
+    void Test();
 signals:
     void sendCanData(CanDataBody);
     void delAllFilesSig();

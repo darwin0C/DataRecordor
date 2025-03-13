@@ -6,6 +6,7 @@
 #include "MsgSignals.h"
 #include "qmycancomm.h"
 #include "inisettings.h"
+#include "commanager.h"
 EventInfo::EventInfo(QObject *parent) : QObject(parent)
 {
     QString deviceStatFile=QCoreApplication::applicationDirPath()+Event_CANDataFile;
@@ -14,9 +15,11 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     getEventList();
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
     connect(&alarmTimer,&QTimer::timeout,this,&EventInfo::alarmOntimeHandle);
-    alarmTimer.start(2000);
+    alarmTimer.start(1000*10);
     connect(QmyCanComm::instance(),&QmyCanComm::CanDataReady,this,&EventInfo::canLongDataHandle);
 
+    memset(&gunAttitude,0,sizeof(GunAttitudeData));
+    memset(&gunFiringData,0,sizeof(GunFiringData));
     //test();
 }
 void EventInfo::test()
@@ -69,7 +72,16 @@ void EventInfo::deviceDataHandle(const CanData &data)
     case  0x1CEC8968:    //长包点对点的CTS
         GunnerP2PLongDataCTSData(data.dataid,(uchar *)data.data);
         break;
+    case  0x1CEB8968:    //长包数据
+        QmyCanComm::instance()->recieveTM_DT((uchar *)data.data);
+
+        break;
     }
+}
+void EventInfo::resbanceToGunner(uchar *buff,int len)
+{
+    uint canID=0x0CE36889;
+    ComManager::instance()->sendRecordCanData(canID,buff,len);
 }
 //接受惯导广播公告数据
 void EventInfo::GunnerBroadcastRTSDataHandle(unsigned int canID,uchar *buff)
@@ -89,7 +101,7 @@ void EventInfo::GunnerP2PLongDataCTSData(uint canId,uchar *buff)
 
 void EventInfo::canLongDataHandle(unsigned char *png ,unsigned char *buff ,unsigned short len ,bool bbroadcast)
 {
-    if(bbroadcast)
+    //if(bbroadcast)
     {
         uint tem=png[0]|png[1]<<8|png[2]<<16;
         SelfAttributeData selfAttributeData;
@@ -100,7 +112,10 @@ void EventInfo::canLongDataHandle(unsigned char *png ,unsigned char *buff ,unsig
                 memcpy(&selfAttributeData,buff,sizeof(SelfAttributeData));
             }
             //emit sig_StatChanged(INUData_Navigate);
+            qDebug()<<"canLongDataHandle"<<selfAttributeData.attribute<<selfAttributeData.uniqueID;
             iniSettings::Instance()->setAttribute(selfAttributeData.attribute,selfAttributeData.uniqueID);
+            uchar a=0x0F;
+            resbanceToGunner(&a,1);
         }
     }
 }
@@ -112,16 +127,16 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
         gunMoveData.barrelDirection=dataMap["BarrelDirection"].value.toUInt();
         gunMoveData.elevationAngle=dataMap["ElevationAngle"].value.toUInt();
 
-        gunFiringData.barrelDirection=dataMap["BarrelDirection"].value.toUInt();
-        gunFiringData.elevationAngle=dataMap["ElevationAngle"].value.toUInt();
+        gunAttitude.barrelDirection=dataMap["BarrelDirection"].value.toUInt();
+        gunAttitude.elevationAngle=dataMap["ElevationAngle"].value.toUInt();
     }
     else if(sigName=="SensorData")
     {
         gunMoveData.chassisRoll=dataMap["Roll"].value.toUInt();
         gunMoveData.chassisPitch=dataMap["Pitch"].value.toUInt();
 
-        gunFiringData.chassisRoll=dataMap["Roll"].value.toUInt();
-        gunFiringData.chassisPitch=dataMap["Pitch"].value.toUInt();
+        gunAttitude.chassisRoll=dataMap["Roll"].value.toUInt();
+        gunAttitude.chassisPitch=dataMap["Pitch"].value.toUInt();
     }
     else if(sigName=="AutoGunMove")
     {
@@ -134,19 +149,26 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
     }
     else if(sigName=="ShootDone")
     {
+        isRevShootSignal=true;
+
+        gunFiringData.attitudeData=gunAttitude;
         gunFiringData.firingCompletedSignal=dataMap["ShootDoneSignal"].value.toUInt();
         gunFiringData.recoilStatus=dataMap["RecoilStatus"].value.toUInt();
         gunFiringData.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
+        gunFiringData.propellantTemperature=propellantTemperature;
         // 创建一个单次执行的定时器
         QTimer::singleShot(2000,this, &EventInfo::onTimeout);
     }
     else if(sigName=="GunpowderTemp")
     {
-        gunFiringData.propellantTemperature=dataMap["GunpowderTemp"].value.toUInt();
+        propellantTemperature=dataMap["GunpowderTemp"].value.toUInt();
+        //gunFiringData.propellantTemperature=dataMap["GunpowderTemp"].value.toUInt();
     }
     else if(sigName=="InitSpeed")
     {
         isInitSpeedreceived=true;
+        gunFiringData.muzzleVelocityValid=1;
+
         gunFiringData.muzzleVelocity=dataMap["InitSpeed"].value.toUInt();
     }
     else if(sigName=="NuclearBioAlarm")//核生化报警
@@ -198,9 +220,9 @@ int EventInfo::SendGunFiringData(GunFiringData gunfirngData)
 {
     //长数据包发送先发送RTS
     unsigned char pgn[3];
-    pgn[0]=0;
+    pgn[0]=0x03;
     pgn[1]=0xFF;
-    pgn[2]=0x03;
+    pgn[2]=0x0;
     //计算发送报数
     unsigned char packets=0;//包数
     unsigned short b=sizeof(GunFiringData);
@@ -208,12 +230,13 @@ int EventInfo::SendGunFiringData(GunFiringData gunfirngData)
         packets=b/7;
     else
         packets=b/7+1;
+    qDebug()<<"SendGunFiringData"<<packets;
     int a= QmyCanComm::instance()->sendTM_RTS(Gunner_Ctrol_LANG_ID,b,packets,pgn,(unsigned char*)&gunfirngData);
     qDebug()<< "GunFiringData("
-            << "barrelDirection: " << gunfirngData.barrelDirection << ", "
-            << "elevationAngle: " << gunfirngData.elevationAngle << ", "
-            << "chassisRoll: " << gunfirngData.chassisRoll << ", "
-            << "chassisPitch: " << gunfirngData.chassisPitch << ", "
+            << "barrelDirection: " << gunfirngData.attitudeData.barrelDirection << ", "
+            << "elevationAngle: " << gunfirngData.attitudeData.elevationAngle << ", "
+            << "chassisRoll: " << gunfirngData.attitudeData.chassisRoll << ", "
+            << "chassisPitch: " << gunfirngData.attitudeData.chassisPitch << ", "
             << "statusChangeTime: "
             << gunfirngData.statusChangeTime.ti_year
             << gunfirngData.statusChangeTime.ti_mon
@@ -234,12 +257,9 @@ void EventInfo::alarmOntimeHandle()
 {
     nuclearBioAlarmCount++;
     fireSuppressAlarmCount++;
-    //test
-
 #ifdef TEST_MODE
-    SendGunFiringData(gunFiringData);//发送到炮长终端
+    //SendGunFiringData(gunFiringData);//发送到炮长终端
 #endif
-
     QByteArray dataArray=getCurrentAlarmData();
     if(!dataArray.isEmpty() && isAutoSendEnabled)
         emit sendCommandDataSig(DataFlag_AlarmInfo, dataArray);

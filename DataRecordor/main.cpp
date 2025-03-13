@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-#ifndef OUTTOFILe
+#ifdef OUTTOFILe
     QString path=gPath+"Log/";
     ensureDirectoryExists(path);
     QString fileName=path+"log_"+QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss")+".txt";

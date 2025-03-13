@@ -2,6 +2,7 @@
 #include  <QThread>
 #include  <QDebug>
 #include "MsgSignals.h"
+#include <QDateTime>
 const int MinPacketLength = 26;
 
 QMyCom::QMyCom(QObject *parent):
@@ -67,7 +68,7 @@ void QMyCom::reciveComData()
     QByteArray tempData = mySeriCom->readAll();
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        //qDebug()<<"data rev:"<<tempData.toHex();
+        qDebug()<<"data rev:"<<tempData.toHex();
     }
 }
 
@@ -163,7 +164,7 @@ int QMyCom::commFrameXorNohead(	unsigned char *pBuf,
 void QMyCom::sendCanMegSigHandle(QByteArray array )
 {
 
-    //qDebug()<<"sendCanMegSigHandle"<<array.toHex();
+    //qDebug()<<"sendCanMegSigHandle"<<QDateTime::currentDateTime().toString("HH:mm:ss.zzz")<<array.toHex();
 
     Q_ASSERT(mySeriCom!=NULL);
     mySeriCom->write(array);

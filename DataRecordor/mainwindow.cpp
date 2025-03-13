@@ -23,6 +23,25 @@ MainWindow::MainWindow(QWidget *parent)
     }
     connect(mp_TCPServer, SIGNAL(newConnection()), this, SLOT(ServerNewConnection()));
     connect(MsgSignals::getInstance(),&MsgSignals::sendLEDStatSig,this,&MainWindow::changeLEDStat);
+    //Test();
+}
+
+void MainWindow::Test()
+{
+    QTimer *timerTest=new QTimer();
+    connect(timerTest,&QTimer::timeout,this,[&](){sendtestData();});
+    timerTest->start(1);
+}
+void MainWindow::sendtestData()
+{
+    static qint64 index=0;
+    uint id=0x0c000102;
+    index++;
+    QByteArray array(8,0);
+    memcpy(array.data(),&index,8);
+    //QByteArray array((char *)index,8);
+    com->sendRecordCanData(id,(uchar *)array.data(),8);
+
 }
 void MainWindow::ServerNewConnection()
 {
@@ -33,6 +52,7 @@ void MainWindow::ServerNewConnection()
     QObject::connect(mp_TCPSocket, &QTcpSocket::readyRead, this, &MainWindow::socket_Read_Data);
     QObject::connect(mp_TCPSocket, &QTcpSocket::disconnected, this, &MainWindow::socket_Disconnected);
 }
+
 void MainWindow::socket_Read_Data()
 {
     QByteArray buffer;

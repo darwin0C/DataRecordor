@@ -70,11 +70,11 @@
     <!--药温数据-->
     <Message ID="0x0CACCB68" Name="GunpowderTemp">
         <Signal Name="GunpowderTemp" StartBit="24" Length="16" Unit="℃" DataType="signed"
-            Factor="0.01" Offset="-99.90" />
+            Factor="1" Offset="0" />
     </Message>
     <!--初速测量数据-->
     <Message ID="0x0C8768CB" Name="InitSpeed">
-        <Signal Name="InitSpeed" StartBit="0" Length="16" Unit="-" DataType="unsigned" Factor="0.1"
+        <Signal Name="InitSpeed" StartBit="0" Length="16" Unit="-" DataType="unsigned" Factor="1"
             Offset="0" />
     </Message>
 

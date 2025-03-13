@@ -117,18 +117,27 @@ int ComManager::sendRecordCanData(uint canID, uchar *buff, unsigned char len)
     // 依次追加各个字段（append 自动管理下标）
     array.append(static_cast<char>(0xD2));
     //array.append(static_cast<char>(0x0B));
-    array.append(static_cast<char>(0x00)); // 发送端口号
-
+    array.append(static_cast<char>(0x01)); // 发送端口号
+    array.append(static_cast<char>((len) & 0xFF));
     // 将 canID 按小端字节顺序追加（减少手动角标操作）
     array.append(static_cast<char>(canID & 0xFF));
     array.append(static_cast<char>((canID >> 8) & 0xFF));
     array.append(static_cast<char>((canID >> 16) & 0xFF));
     array.append(static_cast<char>((canID >> 24) & 0xFF));
 
+
     // 追加数据缓冲区
     if (len > 0)
         array.append(reinterpret_cast<const char*>(buff), len);
+    if(len<8)
+    {
+        int index=0;
+        while (index<8-len) {
+            array.append(static_cast<char>(0x00));
+            index++;
+        }
 
+    }
     // 预先追加一个占位字节，用于存放校验和
     array.append('\0');
 
@@ -147,7 +156,7 @@ int ComManager::sendRecordCanData(uint canID, uchar *buff, unsigned char len)
     array[array.size() - 1] = static_cast<char>(checksum);
 
     // 通过数组第三个字节作为端口号发送数据
-    senSerialDataByCom(array, static_cast<uchar>(array.at(1)));
+    senSerialDataByCom(array, 2);
 
     return 0;
 }

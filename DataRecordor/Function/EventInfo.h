@@ -25,6 +25,9 @@ private:
     QMap<int,QString> eventList;
 
     GunMoveData gunMoveData;
+
+    qint16 propellantTemperature=0;
+    GunAttitudeData gunAttitude;
     GunFiringData gunFiringData;
 
     AlarmInfo nuclearBioAlarmInfo;
@@ -38,6 +41,8 @@ private:
     quint64 nuclearBioAlarmCount=5;
     quint64 fireSuppressAlarmCount=5;
 
+    bool isRevShootSignal=false;
+
     void getEventList();
     void refrushStat(int dataId, const QMap<QString, CanDataValue> &dataMap,LocalDateTime dateTime);
     void test();
@@ -50,6 +55,8 @@ private:
     void GunnerBroadcastRTSDataHandle(unsigned int canID, uchar *buff);
     void GunnerBroadcastDTDataHandle(uchar *buff);
     void GunnerP2PLongDataCTSData(uint canId, uchar *buff);
+
+    void resbanceToGunner(uchar *buff,int len);
 private slots:
     void onTimeout();
     void processCanData(const CanData &data);
