@@ -8,6 +8,8 @@
 #include "data.h"
 #include "commanager.h"
 #include "CommandCtrol.h"
+#include <QTcpServer>
+#include <QTcpSocket>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,12 +24,14 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_pushButton_clicked();
-
     void on_pushButton_2_clicked();
 
     void timerUpdate();
     void timerSendStatus();
+    void ServerNewConnection();
+    void socket_Read_Data();
+    void socket_Disconnected();
+    void changeLEDStat();
 private:
     Ui::MainWindow *ui;
     ComManager *com=nullptr;
@@ -35,9 +39,12 @@ private:
     QThread* ledTimerThread;
     QTimer *timerStatus;
     QThread* StatusTimerThread;
-    CommandCtrol commandCtrol;
-
-    void sendData();
+    CommandCtrol *commandCtrol;
+    QThread* commandThread;
+    int ledBlankTimes = 0;
+    QTcpServer* mp_TCPServer;
+    QTcpSocket* mp_TCPSocket;
+    void socket_Send_Data(QString dataSend);
 
     void startRecord();
     void blankLED();
@@ -45,7 +52,11 @@ private:
 
     void startLEDThread();
     void startStatus();
+    void startCommandCtrl();
+    void sendtestData();
+    void Test();
 signals:
     void sendCanData(CanDataBody);
+    void delAllFilesSig();
 };
 #endif // MAINWINDOW_H

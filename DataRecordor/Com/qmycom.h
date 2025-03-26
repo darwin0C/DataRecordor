@@ -38,8 +38,8 @@ public:
     QTCQueue *myComRxBuff;
     bool initComInterface(const QString &port, int baund);
     bool isComInterfaceOpen();
-    int sendData(uint canID, uchar *buff, unsigned char len);
-    int sendData(char *buff, int len);
+//    int sendData(uint canID, uchar *buff, unsigned char len);
+//    int sendData(char *buff, int len);
 private:
     int  commFrameXorNohead(unsigned char *pBuf, unsigned char cFrameHead, unsigned char cFrameTail, unsigned int FrameSize);
     void run();

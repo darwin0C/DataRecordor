@@ -10,7 +10,8 @@
 #include <QTextStream>
 #include "FileSave/FileSaveData.h"
 #include "data.h"
-const QString gPath="D:/dataSave/";
+#include <QVector>
+
 
 const int diskMinFree=200*1024;
 
@@ -51,11 +52,13 @@ public:
     int diskUsedPercent;
     int diskFree;
     bool isSDCardOK=true;
+
 signals:
     void creatFileSig(QString);
 
 private slots:
     void readDiskData();
+    void onCheckDisk();
 };
 
 #endif // RECORDTHREAD_H

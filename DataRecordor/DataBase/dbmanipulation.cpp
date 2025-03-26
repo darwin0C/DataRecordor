@@ -43,8 +43,7 @@ void DbManipulation::initial(QString path){
     dbMap[DB_GunMoveInfo]=("GunMoveInfo");
     dbMap[DB_GunShootInfo]=("GunShootInfo");
 
-
-    if(!openDb())
+    if(openDb())
     {
         for(auto it=dbMap.begin();it!=dbMap.end();++it)
         {
@@ -160,7 +159,7 @@ void DbManipulation::createTable(int index)
     if(createCmd!="")
         if(!query.exec(createCmd))
         {
-            qDebug()<<"creat table failed:"<<dbMap[index]<<query.lastError();
+            //qDebug()<<"creat table failed:"<<dbMap[index]<<query.lastError();
         }
 }
 
@@ -324,10 +323,10 @@ bool DbManipulation::insertGunFiringData(const GunFiringData& gunFiringData) {
                   .arg(tableName));
 
     // 绑定所有参数，确保它们与数据库表的字段名称一致
-    query.bindValue(":barrel_direction", gunFiringData.barrelDirection);
-    query.bindValue(":elevation_angle", gunFiringData.elevationAngle);
-    query.bindValue(":chassis_roll_angle", gunFiringData.chassisRoll);
-    query.bindValue(":chassis_pitch_angle", gunFiringData.chassisPitch);
+    query.bindValue(":barrel_direction", gunFiringData.attitudeData.barrelDirection);
+    query.bindValue(":elevation_angle", gunFiringData.attitudeData.elevationAngle);
+    query.bindValue(":chassis_roll_angle", gunFiringData.attitudeData.chassisRoll);
+    query.bindValue(":chassis_pitch_angle", gunFiringData.attitudeData.chassisPitch);
 
     QString formattedTime = TimeFormatTrans::getDateTime(gunFiringData.statusChangeTime).toString(dataTimeStyle);
     query.bindValue(":status_change_time", formattedTime);
@@ -524,10 +523,10 @@ bool DbManipulation::updateGunFiringData(int id, const GunFiringData& gunFiringD
                   .arg(tableName));
 
     // 绑定所有参数
-    query.bindValue(":barrel_direction", gunFiringData.barrelDirection);
-    query.bindValue(":elevation_angle", gunFiringData.elevationAngle);
-    query.bindValue(":chassis_roll_angle", gunFiringData.chassisRoll);
-    query.bindValue(":chassis_pitch_angle", gunFiringData.chassisPitch);
+    query.bindValue(":barrel_direction", gunFiringData.attitudeData.barrelDirection);
+    query.bindValue(":elevation_angle", gunFiringData.attitudeData.elevationAngle);
+    query.bindValue(":chassis_roll_angle", gunFiringData.attitudeData.chassisRoll);
+    query.bindValue(":chassis_pitch_angle", gunFiringData.attitudeData.chassisPitch);
 
     QString formattedTime = TimeFormatTrans::getDateTime(gunFiringData.statusChangeTime).toString(dataTimeStyle);
     query.bindValue(":status_change_time", formattedTime);
@@ -639,25 +638,25 @@ QList<DeviceErrorInfo> DbManipulation::getDeviceErrorInfos(int statId) {
 
     return errorList;
 }
-QList<DeviceTotalWorkTime> DbManipulation::getDeviceTotalWorkTimes(int deviceId) {
+DeviceTotalWorkTime DbManipulation::getDeviceTotalWorkTimes(int deviceId) {
     openDb();
-    QList<DeviceTotalWorkTime> workTimeList;
+    DeviceTotalWorkTime workTimeInfo;
     QSqlQuery query(database);
     query.prepare(QString("SELECT device_id, total_worktime FROM %1 WHERE device_id = :device_id").arg(dbMap[DB_Equ_TotalWorkTime]));
     query.bindValue(":device_id", deviceId);
 
     if (query.exec()) {
-        while (query.next()) {
-            DeviceTotalWorkTime workTimeInfo;
+        if (query.next()) {
+
             workTimeInfo.deviceId = query.value(0).toInt();          // 获取 device_id
             workTimeInfo.totalWorkTime = query.value(1).toInt();     // 获取 total_worktime
-            workTimeList.append(workTimeInfo);
+            //workTimeList.append(workTimeInfo);
         }
     } else {
         qDebug() << "Query failed:" << query.lastError();
     }
 
-    return workTimeList;
+    return workTimeInfo;
 }
 
 QList<AlarmInfo> DbManipulation::getAlarmInfos(const TimeCondition *timeCondition) {
@@ -754,10 +753,10 @@ QList<GunFiringData> DbManipulation::getGunFiringData(const TimeCondition *timeC
     if (query.exec()) {
         while (query.next()) {
             GunFiringData gunFiringData;
-            gunFiringData.barrelDirection = query.value(0).toUInt();  // 获取 barrel_direction
-            gunFiringData.elevationAngle = query.value(1).toUInt();   // 获取 elevation_angle
-            gunFiringData.chassisRoll = query.value(2).toUInt();      // 获取 chassis_roll_angle
-            gunFiringData.chassisPitch = query.value(3).toUInt();     // 获取 chassis_pitch_angle
+            gunFiringData.attitudeData.barrelDirection = query.value(0).toUInt();  // 获取 barrel_direction
+            gunFiringData.attitudeData.elevationAngle = query.value(1).toUInt();   // 获取 elevation_angle
+            gunFiringData.attitudeData.chassisRoll = query.value(2).toUInt();      // 获取 chassis_roll_angle
+            gunFiringData.attitudeData.chassisPitch = query.value(3).toUInt();     // 获取 chassis_pitch_angle
 
             // 将 QDateTime 转换为 LongDateTime
             QDateTime timestamp = query.value(4).toDateTime();

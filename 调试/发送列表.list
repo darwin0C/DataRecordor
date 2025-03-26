@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<SendList m_dwCycles="1">
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="" select="0" transmitas="0" obj="68C0F00C000000000000000108FF00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="" select="0" transmitas="0" obj="68C8EC1C00000000000000010810140003FF008D00000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="" select="0" transmitas="0" obj="68C8EB1C000000000000000108017017083E007017000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="" select="0" transmitas="0" obj="68C8EB1C00000000000000010802083E117017083E000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="" select="0" transmitas="0" obj="68C8EB1C0000000000000001080311000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="" select="0" transmitas="0" obj="29A2F30C0000000000000001080001000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="炮长授时" select="0" transmitas="0" obj="68E0F00C000000000000000108E907030C0E1A0000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="身管" select="0" transmitas="0" obj="2953F80C0000000000000001082003111111111111000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="传感器" select="0" transmitas="0" obj="2955F80C0000000000000001082003111111111111000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="50" iTimes="1" len="1" szname="药温" select="1" transmitas="0" obj="68CBAC0C0000000000000001080000002035000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="击发" select="0" transmitas="0" obj="A820F20C0000000000000001080F0F000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="500" iTimes="1" len="1" szname="初速" select="0" transmitas="0" obj="CB68870C0000000000000001082003000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="炮长终端" select="1" transmitas="0" obj="68A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="瞄准手终端" select="1" transmitas="0" obj="C8A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="装填手终端" select="1" transmitas="0" obj="A8A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="驾驶员终端" select="1" transmitas="0" obj="48A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="炮塔配电箱" select="1" transmitas="0" obj="7EA1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="健康管理单元" select="1" transmitas="0" obj="9EA1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="药温测量装置" select="1" transmitas="0" obj="CAA1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="初速雷达" select="1" transmitas="0" obj="CBA1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="惯性导航仪" select="1" transmitas="0" obj="49A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="卫星定位定向装置" select="1" transmitas="0" obj="69A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="制导弹装订器" select="1" transmitas="0" obj="36A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="直瞄镜" select="1" transmitas="0" obj="8AA1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="综合防护控制盒" select="1" transmitas="0" obj="34A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="火控箱" select="1" transmitas="0" obj="29A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="炮控箱" select="1" transmitas="0" obj="24A1F10C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="核生化防护报警" select="0" transmitas="0" obj="3485F00C0000000000000001080F00000000000000000000"></tagSendUint>
+	<tagSendUint bIncreaseID="0" bIncreaseData="0" start_index="0" byte_length="8" iInterval="0" iTimes="1" len="1" szname="灭火抑爆报警" select="0" transmitas="0" obj="3486F00C0000000000000001080F00000000000000000000"></tagSendUint>
+</SendList>

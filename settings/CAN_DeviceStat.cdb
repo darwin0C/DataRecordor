@@ -1,0 +1,236 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CAN_Communication>
+    <!--炮长终端-->
+    <Message ID="0x0CF1A168" Name="GunerStus">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="ErrorCode" StartBit="8" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0" />
+    </Message>
+    <!--瞄准手终端-->
+    <Message ID="0x0CF1A1C8" Name="AimerStatus">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="ErrorCode" StartBit="8" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0" />
+    </Message>
+    <!--装填手终端-->
+    <Message ID="0x0CF1A1A8" Name="LoaderStatus">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="ErrorCode" StartBit="8" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0" />
+    </Message>
+    <!--驾驶员终端-->
+    <Message ID="0x0CF1A148" Name="DriverStatus">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardClock" StartBit="8" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardPCIInterFace" StartBit="9" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardExtrPort" StartBit="10" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardStorage" StartBit="11" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardUSB" StartBit="12" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardNet" StartBit="13" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardSerial" StartBit="14" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="MainboardDisplayPort" StartBit="15" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="CAN_IOBoardPCI" StartBit="16" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="ComBoardCANRegister" StartBit="17" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="ComBoardPCI" StartBit="18" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+    <!--炮塔配电箱-->
+    <Message ID="0x0CF1A17E" Name="TurretSistributionBox">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="PowerModule" StartBit="8" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="EEPROM" StartBit="9" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">                                                
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Fault" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="Voltage" StartBit="16" Length="8" Unit="V" DataType="unsigned" Factor="0.2" Offset="0" />
+        <Signal Name="PowerDistributionMode" StartBit="24" Length="8" Unit="V" DataType="unsigned"  Factor="0.2" Offset="0">
+            <ValueTable>
+                <Value Key="0xF1" Description="Standby" />
+                <Value Key="0xF2" Description="March" />
+                <Value Key="0xF3" Description="Fighting" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--健康管理单元-->
+     <Message ID="0x0CF1A19E" Name="HealthManageUnit">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--药温测量装置-->
+     <Message ID="0x0CF1A1CA" Name="MedicineTempMeasurement">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--初速雷达-->
+     <Message ID="0x0CF1A1CB" Name="InitialVelocityRadar">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--惯性导航仪-->
+     <Message ID="0x0CF1A149" Name="InertialNavigation">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--卫星定位定向装置-->
+     <Message ID="0x0CF1A169" Name="SatellitePositioningDevice">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--制导弹装订器-->
+     <Message ID="0x0CF1A136" Name="GuidanceFuzeSetter">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--直瞄镜-->
+     <Message ID="0x0CF1A18A" Name="DirectAimingSight">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--综合防护控制盒-->
+     <Message ID="0x0CF1A134" Name="IntegratedProtectionBox">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--总线数据记录仪-->
+     <Message ID="0x0CF1A189" Name="BusDataRecorder">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--火控箱-->
+     <Message ID="0x0CF1A129" Name="FireControlBox">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+     <!--炮控箱-->
+     <Message ID="0x0CF1A124" Name="GunControlBox">
+        <Signal Name="WorkStatus" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0x0F" Description="Normal" />
+                <Value Key="0xFF" Description="Fault" />
+            </ValueTable>
+        </Signal>
+    </Message>
+</CAN_Communication>

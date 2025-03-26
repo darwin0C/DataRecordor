@@ -2,7 +2,7 @@
 #include "qfilesavethead.h"
 #include <QDebug>
 #include <QTimer>
-
+#include "MsgSignals.h"
 
 QFileSaveThead::QFileSaveThead(QObject *parent)
     : QThread(parent)
@@ -57,6 +57,7 @@ void QFileSaveThead::revSerialData(SerialDataRev serialData)
 {
     if(!m_bStop)
     {
+        //qDebug() << "revSerialData==========================";
         QString strData=recordManager.getRecordData(serialData);
         saveStringData(strData);
     }
@@ -193,7 +194,13 @@ void QFileSaveThead::run()
         m_usedSpace.acquire();
         if (m_bStop)
             return;
+        bool sigSend=false;
         while (!m_bStop && !m_queueDataBuffer.empty()) {
+            if(!sigSend)
+            {
+                emit MsgSignals::getInstance()->sendLEDStatSig();
+                sigSend = true;
+            }
             m_mutexQueue.lock(); //进入临界区
             TDataBuffer tDataBuffer = m_queueDataBuffer.dequeue();
             m_mutexQueue.unlock(); //离开临界区
@@ -240,4 +247,17 @@ int QFileSaveThead::diskRemains()
 bool QFileSaveThead::sdCardStat()
 {
     return recordManager.isSDCardOK;
+}
+void QFileSaveThead::delAllFiles()
+{
+    if (m_file.isOpen())
+        m_file.close();
+
+    QString del_file = gPath;
+    QDir dir;
+    if (dir.exists(del_file))
+    {
+        dir.setPath(del_file);
+        dir.removeRecursively();
+    }
 }

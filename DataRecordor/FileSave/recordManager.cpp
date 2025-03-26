@@ -1,13 +1,16 @@
 #include "recordManager.h"
-
+#include <QDebug>
+#include "MsgSignals.h"
 RecordManager::RecordManager()
 {
     process = new QProcess(this);
     connect(process, SIGNAL(readyRead()), this, SLOT(readDiskData()));
+    connect(MsgSignals::getInstance(),&MsgSignals::sendCheckDiskSig,this,&RecordManager::onCheckDisk);
 }
 
 QString RecordManager::getRecordData(SerialDataRev dataRev)
 {
+    //qDebug() << "getRecordData==========================";
     QString dateSave;
 
     QString date,time,can_id,can_data;
@@ -25,9 +28,9 @@ QString RecordManager::getRecordData(SerialDataRev dataRev)
             .arg(dataRev.candata.dateTime.second,2,10,QLatin1Char('0'))
             .arg(dataRev.candata.dateTime.msec,3,10,QLatin1Char('0'));
 
-    can_id=QString("%1").arg(dataRev.candata.dataid,8,16,QLatin1Char('0'));
+    can_id=QString("%1").arg(dataRev.candata.dataid,8,16,QLatin1Char('0')).toUpper();
     QByteArray array((char *)dataRev.candata.data,8);
-    can_data=array.toHex();
+    can_data=array.toHex().toUpper();
 
     dateSave=QString("%1 ,prot:%2 : ID:%3, data:%4\n")
             .arg(time)
@@ -53,6 +56,7 @@ void RecordManager::checkTime(QString date,QString time)
         revTime=time.left(2);
     }
     fileMutex.lock();
+    //qDebug()<<"<<<<<<<<<if(isSDCardOK)=========";
     if(isSDCardOK)
     {
         if(revTime.length()>=2)
@@ -95,10 +99,12 @@ void RecordManager::readDiskData()
             isSDCardOK=true;
             break;
         }
+        isSDCardOK=false;
     }
 }
 void RecordManager::checkSize(const QString &result)
 {
+    //qDebug()<<"checkSize"<<result;
     QString dev, use, free, all;
     diskUsed=0;
     diskAll=0;
@@ -151,8 +157,8 @@ void RecordManager::delOldestFile(void)
         QFileInfo fileInfo_server(path_vec[0]);
         QDateTime tempModifiedTime=fileInfo_server.lastModified().toLocalTime();
         filename=path_vec[0];
-        QVector<QString>::iterator iter;
-        for (iter=path_vec.begin();iter!=path_vec.end();iter++)
+        //QVector<QString>::iterator iter;
+        for (auto iter=path_vec.begin();iter!=path_vec.end();iter++)
         {
             QFileInfo fileInfo_server(*iter);
             QDateTime lastModifiedTime =fileInfo_server.lastModified().toLocalTime();
@@ -209,6 +215,7 @@ void RecordManager::delAllFiles(void)
 }
 void RecordManager::creatNewFile(QString date,QString time)
 {
+    //qDebug()<<"<<<<<<<<<creatNewFile=========";
     QFileInfo currntFile(gCurrentfileName);
     if(date!=currentDate || time!=currentTime||!currntFile.exists())
     {
@@ -226,6 +233,7 @@ void RecordManager::newfile(QString date,QString time)
         dir.mkpath(fileDir);
     }
     QString fileName=fileDir+"/ebd_can_"+time.left(2);
+    qDebug()<<"<<<<<<<<<fileName="<<fileName;
     QString finalFileName;
     static int index=0;
     QFile *myFile=new QFile(fileName+".txt");
@@ -246,6 +254,14 @@ void RecordManager::newfile(QString date,QString time)
 
     emit creatFileSig(finalFileName);
     process->start("df -k");
+}
+void RecordManager::onCheckDisk()
+{
+    //qDebug()<<"onCheckDisk";
+#ifdef LINUX_MODE
+    process->start("df -k");
+#endif
+
 }
 QByteArray RecordManager::HexStringToByteArray(QString HexString)
 {

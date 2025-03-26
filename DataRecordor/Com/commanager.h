@@ -45,11 +45,14 @@ public:
     ComManager& operator=(const ComManager&) = delete;
 
     int sendSerialData(QByteArray array);
-    int sendData2Command(unsigned char cmdcode, unsigned char *data, int len);
+    int sendData2Command(unsigned char reciveCode,unsigned char cmdcode, unsigned char *data, int len);
     int sendData2Command(unsigned char reciveCode, unsigned char cmdcode1, unsigned char cmdcode2, unsigned char *data, int len, QString ip, int port);
     int sendNetDataDirectly(QByteArray array, QString ip, int port);
-    void senSerialDataByCom(QByteArray array, int comIndex);
 
+
+    int sendRecordCanData(uint canID, uchar *buff, unsigned char len);
+public slots:
+    void senSerialDataByCom(QByteArray array, int comIndex);
 signals:
     void sendCanMegSig(QByteArray);
     void jsContrlSig();

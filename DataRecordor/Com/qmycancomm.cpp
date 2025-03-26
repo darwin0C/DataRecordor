@@ -2,7 +2,6 @@
 #include <QDebug>
 #include  "qmycom.h"
 #include "commanager.h"
-
 QmyCanComm  *QmyCanComm::myInuCanCom=NULL;
 
 QmyCanComm:: QmyCanComm(QObject *parent): QObject(parent)
@@ -63,7 +62,7 @@ QmyCanComm* QmyCanComm::instance()
 //	短包通用传输函数 8字节内容以内的
 int QmyCanComm::sendData(uint canID,uchar *buff,unsigned char len)
 {
-    return ComManager::instance()->sendCanData(canID,buff,len);
+    return ComManager::instance()->sendRecordCanData(canID,buff,len);
 }
 //发送发数rts   //发送数据失败返回-1 已建立连接则不再重发建立
 int QmyCanComm::sendTM_RTS(uint canID,unsigned short allbytes,unsigned char packets,unsigned char PGN[3],unsigned char *senddata)
@@ -90,11 +89,10 @@ int QmyCanComm::sendTM_RTS(uint canID,unsigned short allbytes,unsigned char pack
     myCanSendData->addr=canID;
     myCanSendData->datalen=allbytes;
     myCanSendData->packetsnum=packets;
-    //    if (myCanSendData->data!=NULL)
-    //    {
+
     myCanSendData->data=new unsigned char[allbytes];
     memcpy(myCanSendData->data,senddata,allbytes);
-    /*   }*/
+
     myCanSendData->pgn[0]=PGN[0];
     myCanSendData->pgn[1]=PGN[1];
     myCanSendData->pgn[2]=PGN[2];
@@ -109,6 +107,7 @@ void QmyCanComm::timerhandle()
 {  
     if(myCanSendData!=NULL&&myCanSendData->datasendflag!=LongDataSend_NULL)
     {
+        //qDebug()<<"myCanSendData->datasendflag==========="<<myCanSendData->datasendflag;
         myCanSendData->cnt++;
         if (myCanSendData->datasendflag==LongDataSend_RTS)
         {
@@ -143,6 +142,8 @@ void QmyCanComm::timerhandle()
             {
                 if (myCanSendData->sendpacketsnum-myCanSendData->havesendrecievepacketnum>0)
                 {
+                    qDebug()<<"myCanSendData "<<myCanSendData->datalen<<QByteArray((char *)myCanSendData->data,myCanSendData->datalen).toHex();
+
                     sendTM_DT((myCanSendData->addr|0x00FF0000)&0xFFEBFFFF,(unsigned char *)myCanSendData->data,myCanSendData->sendpacketstartnum+myCanSendData->havesendrecievepacketnum);
                 }
             }
@@ -164,8 +165,10 @@ void QmyCanComm::timerhandle()
         }
         else if (myCanSendData->datasendflag==LongDataSend_CTS) //
         {
+            qDebug()<<"LongDataSend_CTS==========================="<<LongDataSend_CTS;
             if (myCanSendData->cnt>=5)	 //
             {
+                qDebug()<<"(myCanSendData->addr|0x00FF0000)&0xFFEBFFFF==========";
                 //发送一包数
                 sendTM_DT((myCanSendData->addr|0x00FF0000)&0xFFEBFFFF,(unsigned char*)myCanSendData->data,myCanSendData->sendpacketstartnum);
             }
@@ -278,6 +281,7 @@ void QmyCanComm::recieveLinkDataHandle(unsigned int canID,uchar *buff)
 int  QmyCanComm::sendTM_DT(uint canID,unsigned char *buff,unsigned char startnum)
 {
     // Q_ASSERT(myCanSendData!=NULL);
+    qDebug()<<"canID================================="<<canID;
     if (myCanSendData==NULL)  return -3;
     unsigned short len=0;
     unsigned char tembuff[8];
@@ -289,6 +293,7 @@ int  QmyCanComm::sendTM_DT(uint canID,unsigned char *buff,unsigned char startnum
         else if (tembuff[0]<myCanSendData->packetsnum)
             len=7;
         memcpy(tembuff+1,buff+(startnum-1)*7,len);
+        qDebug()<<"canID================================="<<canID<<"startnum"<<startnum;
         int a=sendData(canID,tembuff,len+1);
 
         myCanSendData->datasendflag=LongDataSend_DT; //发送端处于数据发送状态
@@ -307,11 +312,13 @@ void  QmyCanComm::recieveResponsorTM_CTS( uchar *buff)
     if (myCanSendData==NULL) return ;
 
     myCanSendData->cnt=0;
+    qDebug()<<"recieveResponsorTM_CTS"<<QByteArray((char *)buff,8).toHex();
     if (buff[1]==0)   //收到延时请求
     {
         if (myCanSendData->datasendflag==LongDataSend_DT)   //延时求情会在发送数据后才会有用
             myCanSendData->datasendflag=LongDataSend_DTDelay;
-    }else
+    }
+    else
     {
         myCanSendData->sendpacketstartnum=buff[2];
         myCanSendData->sendpacketsnum=buff[1];
@@ -328,6 +335,7 @@ void  QmyCanComm::recieveResponsorTM_CTS( uchar *buff)
 
                 delete	myCanSendData;
                 myCanSendData=NULL;
+                return;
             }
         }
     }

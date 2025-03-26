@@ -3,11 +3,19 @@
 
 #include <QStringList>
 #include <QDataStream>
-const QString DBDATEFileName="/data/dataBase.db" ; //数据库存储文件
-const QString DeviceNameFile="/settings/deviceName.xml" ; //设备名称
-const QString DeviceStat_CANDataFile="/settings/CAN_DeviceStat.xml" ; //总线协议
-const QString Event_CANDataFile="/settings/CAN_Event.xml" ; //总线协议
 
+
+const QString DBDATEFileName="/data/dataBase.db" ; //数据库存储文件
+const QString DeviceNameFile="/settings/deviceName.cdb" ; //设备名称
+const QString DeviceStat_CANDataFile="/settings/CAN_DeviceStat.cdb" ; //总线协议
+const QString Event_CANDataFile="/settings/CAN_Event.cdb" ; //总线协议
+const QString GlobSettingFile="/settings/setting.ini" ; //总线协议
+
+#ifdef LINUX_MODE
+const QString gPath="/run/media/mmcblk0p1/data/";
+#else
+const QString gPath="D:/run/data/";
+#endif
 #pragma pack(1)  //内存1字节对齐
 
 typedef struct
@@ -58,7 +66,7 @@ typedef struct
 #pragma pack()
 
 const QString ledGreen_on = "echo 1 > /sys/class/gpio/gpio1/value";
-const QString ledRed_on = "echo 1 > /sys/class/gpio/gpio2/value";
+const QString ledRed_on = "echo 0 > /sys/class/gpio/gpio1/value;echo 1 > /sys/class/gpio/gpio2/value";
 const QString ledYellow_on="echo 1 > /sys/class/gpio/gpio1/value;echo 1 > /sys/class/gpio/gpio2/value";
 const QString led_off = "echo 0 > /sys/class/gpio/gpio1/value;echo 0 > /sys/class/gpio/gpio2/value";
 

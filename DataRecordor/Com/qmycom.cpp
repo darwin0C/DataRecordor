@@ -2,11 +2,13 @@
 #include  <QThread>
 #include  <QDebug>
 #include "MsgSignals.h"
+#include <QDateTime>
 const int MinPacketLength = 26;
 
 QMyCom::QMyCom(QObject *parent):
     QThread(parent)
 {
+
     mySeriCom=new QSerialPort(this);
     connect(mySeriCom, &QSerialPort::readyRead, this, &QMyCom::reciveComData);
     isOpen=false;
@@ -87,18 +89,19 @@ void QMyCom::comDataHandle()
         SerialDataRev stFromOPCData;
         CanData CanDataRev;
         myComRxBuff->Peek(tembuff,MinPacketLength);
-        uint len=tembuff[2];
         unsigned char head=tembuff[0];
-        if(head!=0XC1 || len>MinPacketLength)
+        unsigned char flag=tembuff[1];
+        if(head!=0XC1 || flag!=0x0A)
         {
             myComRxBuff->MoveReadP(1);
             continue;
         }
+
         if (andCheck(tembuff,MinPacketLength)) //判断收到的数据是否正确
         {
             myComRxBuff->Get(&stFromOPCData,MinPacketLength);
             memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
-
+            //qDebug() << "emit serialDataSig==========================";
             emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
             emit MsgSignals::getInstance()->canDataSig(CanDataRev);
         }else
@@ -111,8 +114,8 @@ bool QMyCom::andCheck(unsigned char *pBuf, unsigned int FrameSize) {
         return false; // 如果帧大小为 0，直接返回 false
     }
     unsigned char sum = 0;
-    // 对所有字节（除最后一个字节外）进行求和
-    for (unsigned int i = 0; i < FrameSize - 1; ++i) {
+    // 对所有字节（除第一个最后一个字节外）进行求和
+    for (unsigned int i = 1; i < FrameSize - 1; ++i) {
         sum += pBuf[i];
     }
     // 取低8位
@@ -160,36 +163,39 @@ int QMyCom::commFrameXorNohead(	unsigned char *pBuf,
 }
 void QMyCom::sendCanMegSigHandle(QByteArray array )
 {
+
+    //qDebug()<<"sendCanMegSigHandle"<<QDateTime::currentDateTime().toString("HH:mm:ss.zzz")<<array.toHex();
+
     Q_ASSERT(mySeriCom!=NULL);
     mySeriCom->write(array);
 }
 //发送函数
 //	短包通用传输函数 8字节内容以内的
-int QMyCom::sendData(uint canID,uchar *buff,unsigned char len)
-{
-    Q_ASSERT(mySeriCom!=NULL);
-    //if (mycom==NULL)  return -3;
-    uchar *buf=new uchar[len+8];
-    buf[0]=0x09;
-    buf[1]=len+8;
-    buf[2]=canID&0xff;
-    buf[3]=canID>>8&0xff;
-    buf[4]=canID>>16&0xff;
-    buf[5]=canID>>24&0xff;
-    if(len>0)
-        memcpy(buf+6,buff,len);
-    buf[len+6]=0;
-    buf[len+7]=0x0D;
-    for (short i=1;i<len+6;i++)
-        buf[len+6]^=buf[i];
-    int  a=mySeriCom->write((char *)buf,len+8);
-    delete[] buf;
-    return a;
-}
-//	短包通用传输函数 8字节内容以内的
-int QMyCom::sendData(char *buff,int len)
-{
-    Q_ASSERT(mySeriCom!=NULL);
-    return mySeriCom->write(buff,len);
-}
+//int QMyCom::sendData(uint canID,uchar *buff,unsigned char len)
+//{
+//    Q_ASSERT(mySeriCom!=NULL);
+//    //if (mycom==NULL)  return -3;
+//    uchar *buf=new uchar[len+8];
+//    buf[0]=0x09;
+//    buf[1]=len+8;
+//    buf[2]=canID&0xff;
+//    buf[3]=canID>>8&0xff;
+//    buf[4]=canID>>16&0xff;
+//    buf[5]=canID>>24&0xff;
+//    if(len>0)
+//        memcpy(buf+6,buff,len);
+//    buf[len+6]=0;
+//    buf[len+7]=0x0D;
+//    for (short i=1;i<len+6;i++)
+//        buf[len+6]^=buf[i];
+//    int  a=mySeriCom->write((char *)buf,len+8);
+//    delete[] buf;
+//    return a;
+//}
+////	短包通用传输函数 8字节内容以内的
+//int QMyCom::sendData(char *buff,int len)
+//{
+//    Q_ASSERT(mySeriCom!=NULL);
+//    return mySeriCom->write(buff,len);
+//}
 

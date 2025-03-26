@@ -8,8 +8,8 @@
 #include "data.h"
 
 //用于侦察车侦察终端与指挥之间的通信协议
-#define   SelfAddrCode    0xE5
-#define   CommandAdrrCode 0xE0
+//#define   SelfAddrCode    0xE5
+//#define   CommandAdrrCode 0xE0
 #define   ComUnitAdrrCode 0xE2
 #define   systemAdrrCode  0xE9
 #define   GPSAdrrCode 0xE4
@@ -56,7 +56,7 @@ public:
 
     void initSocket(QString ip, uint port);
     int sendData(unsigned char *data, int len, QString ip, int port);
-    void commandDataHandle(char *buff,ushort dlen);
+
 
     bool joinGroup(QString udpGroup);
 signals:
@@ -71,6 +71,8 @@ private:
     int Verify_Sum(unsigned char *sBytes, int iBytesCount);
     int Verify_Sum2(unsigned char *sBytes, int iBytesCount);
     int Verify_SumLow8(unsigned char *sBytes, int iBytesCount);
+    void eb90commandDataHandle(char *buff,ushort dlen);
+    void eb48commandDataHandle(char *buff, ushort dlen);
 };
 
 #endif // QMYNETCOM_H
