@@ -15,7 +15,8 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     getEventList();
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
     connect(&alarmTimer,&QTimer::timeout,this,&EventInfo::alarmOntimeHandle);
-    alarmTimer.start(1000*10);
+    alarmTimer.start(1000*2);
+
     connect(QmyCanComm::instance(),&QmyCanComm::CanDataReady,this,&EventInfo::canLongDataHandle);
 
     memset(&gunAttitude,0,sizeof(GunAttitudeData));
@@ -194,10 +195,10 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
 void EventInfo::setAutoReport(bool enable)
 {
     isAutoSendEnabled=enable;
-    //    if(isAutoSendEnabled)
-    //        alarmTimer.start(2000);
-    //    else
-    //        alarmTimer.stop();
+    if(isAutoSendEnabled)
+        alarmTimer.start(2000);
+    else
+        alarmTimer.stop();
 }
 
 void EventInfo::onTimeout()
