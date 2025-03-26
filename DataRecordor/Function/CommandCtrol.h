@@ -23,7 +23,6 @@ private:
     QString selfUniqueID;
     quint16 commandCode=0xE0;
 
-    void setAutoReport(bool enable);
     void sysTimeSetHandle(const TimeSetCMD &commandData);
     void dataRequreHandle(const CommandDataRequre &commandData);
     QByteArray requreCurrentData(int dataFlag,int deviceAddress);
@@ -42,6 +41,7 @@ private slots:
     void timeStatHandle();
     void sendCommandData(Send2CommandData sendData, QByteArray dataArray);
     void autoSendCommandDataHandle(int dataFlag, QByteArray dataArray);
+    void setAutoReport(bool enable);
 };
 
 #endif // COMMANDCTROL_H

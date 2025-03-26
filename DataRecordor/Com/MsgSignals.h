@@ -26,6 +26,7 @@ signals:
     void commandDataSig(quint16,quint16,QByteArray);
     void sendLEDStatSig();
     void sendCheckDiskSig();
+    void startAutoSend(bool);
 private:
     // 构造函数私有化，确保外部无法直接创建对象
     MsgSignals() {}

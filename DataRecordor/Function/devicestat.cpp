@@ -24,6 +24,7 @@ bool DeviceStat::refreshStat(DeviceStatusInfo Stat)
 {
     LinkCount=0;
     qDebug()<<"thisDeviceID:"<<QString::number(thisDeviceID,16);
+
     recoardWorkTime(TimeFormatTrans::getDateTime(Stat.dateTime));
     quint8 Status=lastDeviceStat.deviceStatus.Status ;// 设备状态
     memcpy(&lastDeviceStat,&Stat,sizeof (DeviceStatusInfo));

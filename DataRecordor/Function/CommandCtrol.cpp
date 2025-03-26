@@ -6,6 +6,8 @@
 CommandCtrol::CommandCtrol(QObject *parent) : QObject(parent)
 {
     connect(MsgSignals::getInstance(),&MsgSignals::commandDataSig,this,&CommandCtrol::dataHandle);
+    connect(MsgSignals::getInstance(),&MsgSignals::startAutoSend,this,&CommandCtrol::setAutoReport);
+
     connect(&statTimer,&QTimer::timeout,this,&CommandCtrol::timeStatHandle);
 
     connect(&eventInfo,&EventInfo::sendCommandDataSig,this,&CommandCtrol::autoSendCommandDataHandle);
@@ -69,11 +71,13 @@ void CommandCtrol::dataRequreHandle(const CommandDataRequre &commandData)
 {
     if(commandData.msgReportCtrl==1)
     {
+        emit MsgSignals::getInstance()->startAutoSend(true);
         //setAutoReport(true);
         eventInfo.setAutoReport(true);
     }
     else
     {
+        emit MsgSignals::getInstance()->startAutoSend(false);
         //setAutoReport(false);
         eventInfo.setAutoReport(false);
     }
