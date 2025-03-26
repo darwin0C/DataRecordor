@@ -108,17 +108,17 @@ void ComManager::senSerialDataByCom(QByteArray array,int comIndex)
 {
     if(comIndex==0)
     {
-        if(serialCom1->isOpen)
+        if(serialCom1 && serialCom1->isOpen)
             serialCom1->sendCanMegSigHandle(array);
     }
     else if(comIndex==1)
     {
-        if(serialCom2->isOpen)
+        if(serialCom2 && serialCom2->isOpen)
             serialCom2->sendCanMegSigHandle(array);
     }
     else if(comIndex==2)
     {
-        if(serialCom3->isOpen)
+        if(serialCom3 && serialCom3->isOpen)
             serialCom3->sendCanMegSigHandle(array);
     }
 }
