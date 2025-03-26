@@ -31,10 +31,12 @@ enum Device_Stat
 
 enum DataFlagToSend
 {
-    DataFlag_Attribute      =0,
-    DataFlag_WorkStat       =1,
-    DataFlag_AlarmInfo      =2,
-    DataFlag_TotalWorkTime  =3,
+    //DataFlag_Attribute      =0,
+    DataFlag_WorkStat       =0,
+    DataFlag_AlarmInfo      =1,
+    DataFlag_TotalWorkTime  =2,
+    DataFlag_Attribute      =3,
+
     DataFlag_GunMoveData    =4,
     DataFlag_GunshootData   =5,
     DataFlag_AllData        =0xFF,

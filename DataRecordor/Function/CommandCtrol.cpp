@@ -7,10 +7,14 @@ CommandCtrol::CommandCtrol(QObject *parent) : QObject(parent)
 {
     connect(MsgSignals::getInstance(),&MsgSignals::commandDataSig,this,&CommandCtrol::dataHandle);
     connect(&statTimer,&QTimer::timeout,this,&CommandCtrol::timeStatHandle);
-    connect(&eventInfo,&EventInfo::sendCommandDataSig,this,&CommandCtrol::autoSendCommandDataHandle);
-    initData();
-}
 
+    connect(&eventInfo,&EventInfo::sendCommandDataSig,this,&CommandCtrol::autoSendCommandDataHandle);
+
+    initData();
+    setAutoReport(false);
+    quint16 SelfAddrCode =iniSettings::Instance()->getSelfAttribute();
+    commandCode=0xF0 & SelfAddrCode;
+}
 
 void CommandCtrol::initData()
 {
@@ -65,14 +69,15 @@ void CommandCtrol::dataRequreHandle(const CommandDataRequre &commandData)
 {
     if(commandData.msgReportCtrl==1)
     {
-        setAutoReport(true);
+        //setAutoReport(true);
         eventInfo.setAutoReport(true);
     }
     else
     {
-        setAutoReport(false);
+        //setAutoReport(false);
         eventInfo.setAutoReport(false);
     }
+
     if(commandData.requreMethod==DataType_RTData)//查询当前值
     {
         SendRTDataToCommand(commandData.requreData,commandData.deviceAddress);
@@ -171,7 +176,9 @@ void CommandCtrol::autoSendCommandDataHandle(int dataFlag, QByteArray dataArray)
     sendData.dataPacketIndedx=0;
     QByteArray array(reinterpret_cast<const char*>(&sendData), sizeof(Send2CommandData));
     array.append(dataArray);
+    qDebug()<<"autoSendCommandDataHandle";
     ComManager::instance()->sendData2Command(commandCode,CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
+
 }
 
 
@@ -179,11 +186,13 @@ void CommandCtrol::sendCommandData(Send2CommandData sendData, QByteArray dataArr
 {
     QByteArray array(reinterpret_cast<const char*>(&sendData), sizeof(Send2CommandData));
     array.append(dataArray);
+    qDebug()<<"sendCommandData";
     ComManager::instance()->sendData2Command(commandCode,CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
 }
 
 QByteArray CommandCtrol::requreCurrentData(int dataFlag,int deviceAddress)
 {
+    qDebug()<<"requreCurrentData"<<dataFlag<<deviceAddress;
     QByteArray dataArray;
     switch (dataFlag) {
     case DataFlag_Attribute://0:属性信息
@@ -264,6 +273,7 @@ void CommandCtrol::timeStatHandle()
         quint8 deviceNum=count;
         array.append(deviceNum);
         array.append(statArray);
+        qDebug()<<"timeStatHandle";
         ComManager::instance()->sendData2Command(commandCode,CMD_Code_Report,reinterpret_cast<unsigned char*>(array.data()),array.size());
     }
 }

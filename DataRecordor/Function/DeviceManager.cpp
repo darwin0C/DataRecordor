@@ -16,8 +16,6 @@ DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
     loadAndInsertDevicesFromXml(deviceNameFile);
     qRegisterMetaType<CanData>("CanData");
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&DeviceManager::processCanData);
-
-    //test();
 }
 
 void DeviceManager::test()
@@ -170,8 +168,9 @@ QByteArray DeviceManager::getErrorDeviceStat(int &deviceCount)
         if(it.value() != nullptr) // 检查指针合法性
         {
             DeviceStatus deviceStatus = it.value()->workStatus().deviceStatus;
-            if(deviceStatus.Status!=0x0F)
+            if(deviceStatus.Status==0xFF)
             {
+
                 array.append(QByteArray(reinterpret_cast<const char*>(&deviceStatus), sizeof(DeviceStatus)));
                 deviceCount++;
             }
@@ -216,7 +215,6 @@ QList<DeviceStatusInfo> DeviceManager::getHistoryDeviceStat(int deviceAddress,Ti
         {
             statInfoList.append(statInfo);
         }
-
     }
     return statInfoList;
 }

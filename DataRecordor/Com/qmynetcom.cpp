@@ -48,7 +48,7 @@ void QMyNetCom::udpCommandDataRecive()
         QHostAddress sourceip;
         myCommandUdp->readDatagram(data.data(),data.size(),&sourceip);
         myNetRx->Add(data.data(),data.size());
-        //qDebug()<<"udp data:"<<data.toHex();
+        qDebug()<<"udp data:"<<data.toHex();
     }
 }
 void QMyNetCom::run()
