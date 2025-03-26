@@ -1,5 +1,4 @@
 #include "EventInfo.h"
-
 #include <QCoreApplication>
 #include <QDebug>
 #include <QTimer>
@@ -7,6 +6,7 @@
 #include "qmycancomm.h"
 #include "inisettings.h"
 #include "commanager.h"
+
 EventInfo::EventInfo(QObject *parent) : QObject(parent)
 {
     QString deviceStatFile=QCoreApplication::applicationDirPath()+Event_CANDataFile;
@@ -15,7 +15,7 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     getEventList();
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
     connect(&alarmTimer,&QTimer::timeout,this,&EventInfo::alarmOntimeHandle);
-    alarmTimer.start(1000*10);
+    //alarmTimer.start(1000*10);
     connect(QmyCanComm::instance(),&QmyCanComm::CanDataReady,this,&EventInfo::canLongDataHandle);
 
     memset(&gunAttitude,0,sizeof(GunAttitudeData));
@@ -143,8 +143,8 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
         gunMoveData.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
         gunMoveData.autoAdjustmentStatus=dataMap["GunMoveStat"].value.toUInt();
         saveGunMovedata();
-        if(isAutoSendEnabled)
-            emit sendCommandDataSig(DataFlag_GunMoveData, QByteArray(reinterpret_cast<const char*>(&gunMoveData), sizeof(GunMoveData)));
+        //        if(isAutoSendEnabled)
+        //            emit sendCommandDataSig(DataFlag_GunMoveData, QByteArray(reinterpret_cast<const char*>(&gunMoveData), sizeof(GunMoveData)));
 
     }
     else if(sigName=="ShootDone")
@@ -173,8 +173,9 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
     }
     else if(sigName=="NuclearBioAlarm")//核生化报警
     {
-        nuclearBioAlarmCount=0;
+        qDebug()<<"rev NuclearBioAlarm";
 
+        nuclearBioAlarmCount=0;
         nuclearBioAlarmInfo.alarmContent=0;
         nuclearBioAlarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
         nuclearBioAlarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt()& 0xFFFF;
@@ -182,8 +183,9 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
     }
     else if(sigName=="FireExtinguishSuppressAlarm")//灭火抑爆报警
     {
-        fireSuppressAlarmCount=0;
+        qDebug()<<"rev FireExtinguishSuppressAlarm";
 
+        fireSuppressAlarmCount=0;
         fireSuppressBioAlarmInfo.alarmContent=1;
         fireSuppressBioAlarmInfo.statusChangeTime=TimeFormatTrans::convertToLongDateTime(dateTime);
         fireSuppressBioAlarmInfo.alarmDetails=dataMap["Alarm"].value.toUInt() & 0xFF;
@@ -210,7 +212,7 @@ void EventInfo::onTimeout()
         {
             SendGunFiringData(gunFiringData);//发送到炮长终端
             //发送到指挥终端
-            emit sendCommandDataSig(DataFlag_GunshootData, QByteArray(reinterpret_cast<const char*>(&gunFiringData), sizeof(GunFiringData)));
+            //emit sendCommandDataSig(DataFlag_GunshootData, QByteArray(reinterpret_cast<const char*>(&gunFiringData), sizeof(GunFiringData)));
         }
         isInitSpeedreceived=false;
     }
@@ -252,6 +254,7 @@ int EventInfo::SendGunFiringData(GunFiringData gunfirngData)
             << ")";
     return a;
 }
+
 //定时上报报警状态
 void EventInfo::alarmOntimeHandle()
 {

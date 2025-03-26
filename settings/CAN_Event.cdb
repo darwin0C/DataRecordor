@@ -2,12 +2,9 @@
 <CAN_Communication>
     <!--火炮身管方向-->
     <Message ID="0x0CF85329" Name="GunBarrelDirection">
-        <Signal Name="BarrelDirection" StartBit="0" Length="16" Unit="-" DataType="unsigned"
-            Factor="1" Offset="0" />
-        <Signal Name="ElevationAngle" StartBit="16" Length="16" Unit="-" DataType="unsigned"
-            Factor="1" Offset="0" />
-        <Signal Name="DirectionFlag" StartBit="32" Length="8" Unit="-" DataType="unsigned"
-            Factor="1" Offset="0">
+        <Signal Name="BarrelDirection" StartBit="0" Length="16" Unit="-" DataType="unsigned" Factor="1" Offset="0" /> 
+        <Signal Name="ElevationAngle" StartBit="16" Length="16" Unit="-" DataType="unsigned" Factor="1" Offset="0" />
+        <Signal Name="DirectionFlag" StartBit="32" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
             <ValueTable>
                 <Value Key="0" Description="NoDirection" />
                 <Value Key="1" Description="INS" />
@@ -15,31 +12,24 @@
                 <Value Key="3" Description="Satellite" />
             </ValueTable>
         </Signal>
-        <Signal Name="SatelliteFlag" StartBit="40" Length="8" Unit="-" DataType="unsigned"
-            Factor="1" Offset="0">
+        <Signal Name="SatelliteFlag" StartBit="40" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
             <ValueTable>
                 <Value Key="0" Description="Invalid" />
                 <Value Key="1" Description="Valid" />
             </ValueTable>
         </Signal>
-        <Signal Name="BarrelDirectionBasedSatellite" StartBit="48" Length="16" Unit="-"
-            DataType="unsigned" Factor="1" Offset="0" />
+        <Signal Name="BarrelDirectionBasedSatellite" StartBit="48" Length="16" Unit="-" DataType="unsigned" Factor="1" Offset="0" />
     </Message>
     <!--传感器数据-->
     <Message ID="0x0CF85529" Name="SensorData">
-        <Signal Name="AZ" StartBit="0" Length="16" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0" />
-        <Signal Name="EL" StartBit="16" Length="16" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0" />
-        <Signal Name="Roll" StartBit="32" Length="16" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0" />
-        <Signal Name="Pitch" StartBit="48" Length="16" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0" />
+        <Signal Name="AZ" StartBit="0" Length="16" Unit="-" DataType="unsigned" Factor="1" Offset="0" />          
+        <Signal Name="EL" StartBit="16" Length="16" Unit="-" DataType="unsigned" Factor="1" Offset="0" />
+        <Signal Name="Roll" StartBit="32" Length="16" Unit="-" DataType="unsigned" Factor="1" Offset="0" />
+        <Signal Name="Pitch" StartBit="48" Length="16" Unit="-" DataType="unsigned" Factor="1" Offset="0" />        
     </Message>
     <!--自动调炮应答-->
     <Message ID="0x0CF3A229" Name="AutoGunMove">
-        <Signal Name="GunMoveStat" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0">
+        <Signal Name="GunMoveStat" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
             <ValueTable>
                 <Value Key="0x00" Description="TimeOut" />
                 <Value Key="0x01" Description="StartMove" />
@@ -47,20 +37,16 @@
                 <Value Key="0xFF" Description="MoveDone" />
             </ValueTable>
         </Signal>
-        <Signal Name="ErrorCode" StartBit="8" Length="8" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0" />
+        <Signal Name="ErrorCode" StartBit="8" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0" />   
     </Message>
     <!--击发完毕信息-->
     <Message ID="0x0CF220A8" Name="ShootDone">
-        <Signal Name="ShootDoneSignal" StartBit="0" Length="8" Unit="-" DataType="unsigned"
-            Factor="1"
-            Offset="0">
+        <Signal Name="ShootDoneSignal" StartBit="0" Length="8" Unit="-" DataType="unsigned"  Factor="1" Offset="0">
             <ValueTable>
                 <Value Key="0x0F" Description="ShootDone" />
             </ValueTable>
         </Signal>
-        <Signal Name="RecoilStatus" StartBit="8" Length="8" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0">
+        <Signal Name="RecoilStatus" StartBit="8" Length="8" Unit="-" DataType="unsigned" Factor="1" Offset="0">
             <ValueTable>
                 <Value Key="0x0F" Description="RECOIL_COMPLETED" />
                 <Value Key="0xFF" Description="RECOIL_FAILED" />
@@ -69,14 +55,66 @@
     </Message>
     <!--药温数据-->
     <Message ID="0x0CACCB68" Name="GunpowderTemp">
-        <Signal Name="GunpowderTemp" StartBit="24" Length="16" Unit="℃" DataType="signed"
-            Factor="1" Offset="0" />
+        <Signal Name="GunpowderTemp" StartBit="24" Length="16" Unit="℃" DataType="unsigned" Factor="1" Offset="0" />      
     </Message>
     <!--初速测量数据-->
     <Message ID="0x0C8768CB" Name="InitSpeed">
-        <Signal Name="InitSpeed" StartBit="0" Length="16" Unit="-" DataType="unsigned" Factor="1"
-            Offset="0" />
+        <Signal Name="InitSpeed" StartBit="0" Length="16" Unit="m/s" DataType="unsigned" Factor="1" Offset="0" />  
     </Message>
-
+    <!--核生化防护报警-->
+    <Message ID="0x0CF08534" Name="NuclearBioAlarm">
+        <Signal Name="Alarm" StartBit="0" Length="16" Unit="-" DataType="unsigned" Factor="1"  Offset="0" /> 
+        <!--
+        <Signal Name="PoisonAlarm" StartBit="0" Length="1" Unit="-" DataType="unsigned" Factor="1"  Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Alarm" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="NuclearHigh" StartBit="1" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Alarm" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="NuclearLow" StartBit="2" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Alarm" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="BuildPressStat" StartBit="8" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="NotRunning" />
+                <Value Key="1" Description="Running" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="PressDiff" StartBit="16" Length="16" Unit="Pa" DataType="unsigned" Factor="1" Offset="0" />
+        -->
+    </Message>
+    <!--灭火抑爆报警-->
+    <Message ID="0x0CF08634" Name="FireExtinguishSuppressAlarm">
+        <Signal Name="Alarm" StartBit="0" Length="8" Unit="-" DataType="unsigned" Factor="1"  Offset="0" /> 
+        <!--
+        <Signal Name="DetectorFireAlarm" StartBit="0" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Alarm" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="EmergencyButtonFireAlarm" StartBit="1" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="Normal" />
+                <Value Key="1" Description="Alarm" />
+            </ValueTable>
+        </Signal>
+        <Signal Name="FanStartSignal" StartBit="2" Length="1" Unit="-" DataType="unsigned" Factor="1" Offset="0">
+            <ValueTable>
+                <Value Key="0" Description="InValid" />
+                <Value Key="1" Description="Valid" />
+            </ValueTable>
+        </Signal>
+         -->
+    </Message>
 
 </CAN_Communication>

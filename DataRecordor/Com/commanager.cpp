@@ -238,7 +238,7 @@ int ComManager::sendData2Command(unsigned char reciveCode,unsigned char cmdcode,
     buff[len+7]=~buff[len+7]+1;
     int ret=myNetComInterface->sendData(buff,len+8,netSocketIP,netSocketPort);
     QByteArray temarry((char*)buff,len+8);
-    qDebug()<<ret <<"net datalen 1:"<<temarry.toHex();
+    qDebug()<<ret <<"send  net datalen :"<<temarry.toHex();
 
     delete[] buff;
     return ret;
