@@ -199,10 +199,10 @@ void EventInfo::refrushStat(int dataId,const QMap<QString,CanDataValue> &dataMap
 void EventInfo::setAutoReport(bool enable)
 {
     isAutoSendEnabled=enable;
-    if(isAutoSendEnabled)
-        alarmTimer.start(2000);
+    if (isAutoSendEnabled)
+        QMetaObject::invokeMethod(&alarmTimer, "start", Qt::QueuedConnection, Q_ARG(int, 2000));
     else
-        alarmTimer.stop();
+        QMetaObject::invokeMethod(&alarmTimer, "stop", Qt::QueuedConnection);
 }
 
 void EventInfo::onTimeout()

@@ -71,13 +71,11 @@ void CommandCtrol::dataRequreHandle(const CommandDataRequre &commandData)
 {
     if(commandData.msgReportCtrl==1)
     {
-        emit MsgSignals::getInstance()->startAutoSend(true);
         //setAutoReport(true);
         eventInfo.setAutoReport(true);
     }
     else
     {
-        emit MsgSignals::getInstance()->startAutoSend(false);
         //setAutoReport(false);
         eventInfo.setAutoReport(false);
     }
