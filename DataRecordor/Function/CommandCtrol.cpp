@@ -30,7 +30,7 @@ void CommandCtrol::dataHandle(quint16 sendCode,quint16 cmdCode,QByteArray array)
     quint32 len=array.size();
     if(len==0)
         return;
-    switch (cmdCode) {
+    switch (cmdCode&0xFF) {
     case CMD_Code_SysTimeSet://系统授时（射击初始条件）
         if (len >= sizeof(TimeSetCMD))
         {

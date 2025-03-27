@@ -204,7 +204,7 @@ void QMyNetCom::eb90commandDataHandle(char *buff,ushort dlen)
     int start = 7;  // 第8位 命令参数开始
     int length = byteArray.size() - 8;  // 计算长度
     qint8 sendCode=byteArray[5];
-    int cmdCode=byteArray[6];
+    qint8 cmdCode=byteArray[6];
     QByteArray result = byteArray.mid(start, length);
     emit MsgSignals::getInstance()->commandDataSig(sendCode,cmdCode,result);
     qDebug() << result;  //

@@ -14,7 +14,7 @@ DeviceStat::DeviceStat(int deviceId,QObject *parent) : QObject(parent)
     DeviceLinkStat=Device_Stat_DisLink;
     memset(&lastDeviceStat,0,sizeof (DeviceStatusInfo));
     lastDeviceStat.dateTime=TimeFormatTrans::getLongDataTime(QDateTime::currentDateTime());
-
+    lastDeviceStat.deviceStatus.deviceAddress=thisDeviceID;
     qRegisterMetaType<DeviceStatusInfo>("DeviceStatusInfo");//自定义类型需要先注册
 
     deviceTotalWorkTime=DbOperator::Get()->getDeviceTotalWorkTimes(thisDeviceID);
