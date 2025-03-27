@@ -11,7 +11,7 @@ DbManipulation::DbManipulation()
 {
     if(!isDbInited)
     {
-        QString fileName=QCoreApplication::applicationDirPath()+DBDATEFileName;
+        QString fileName=/*QCoreApplication::applicationDirPath()*/gPath+DBDATEFileName;
         QFileInfo file(fileName);
         if(!file.absoluteDir().exists())
         {

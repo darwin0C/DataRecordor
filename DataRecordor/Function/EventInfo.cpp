@@ -277,11 +277,13 @@ QByteArray EventInfo::getCurrentAlarmData()
     quint8 alarmCount=0;
     if(nuclearBioAlarmCount<5)
     {
+        qDebug()<<"nuclearBioAlarmCount "<<nuclearBioAlarmCount;
         alarmCount++;
         dataArray.append(QByteArray(reinterpret_cast<const char*>(&nuclearBioAlarmInfo), sizeof(AlarmInfo)));
     }
     if(fireSuppressAlarmCount<5)
     {
+        qDebug()<<"fireSuppressAlarmCount "<<fireSuppressAlarmCount;
         alarmCount++;
         dataArray.append(QByteArray(reinterpret_cast<const char*>(&fireSuppressBioAlarmInfo), sizeof(AlarmInfo)));
     }

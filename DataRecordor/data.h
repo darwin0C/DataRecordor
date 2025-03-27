@@ -5,7 +5,7 @@
 #include <QDataStream>
 
 
-const QString DBDATEFileName="/data/dataBase.db" ; //数据库存储文件
+const QString DBDATEFileName="dataBase/dataBase.db" ; //数据库存储文件
 const QString DeviceNameFile="/settings/deviceName.cdb" ; //设备名称
 const QString DeviceStat_CANDataFile="/settings/CAN_DeviceStat.cdb" ; //总线协议
 const QString Event_CANDataFile="/settings/CAN_Event.cdb" ; //总线协议
