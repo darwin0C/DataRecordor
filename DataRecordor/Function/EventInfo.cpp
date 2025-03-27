@@ -16,7 +16,7 @@ EventInfo::EventInfo(QObject *parent) : QObject(parent)
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
     connect(&alarmTimer,&QTimer::timeout,this,&EventInfo::alarmOntimeHandle);
 
-    //alarmTimer.start(1000*2);
+    alarmTimer.start(1000*2);
 
 
     connect(QmyCanComm::instance(),&QmyCanComm::CanDataReady,this,&EventInfo::canLongDataHandle);
@@ -267,7 +267,7 @@ void EventInfo::alarmOntimeHandle()
     //SendGunFiringData(gunFiringData);//发送到炮长终端
 #endif
     QByteArray dataArray=getCurrentAlarmData();
-    if(!dataArray.isEmpty() && isAutoSendEnabled)
+    if(dataArray.size()>2 && isAutoSendEnabled)
         emit sendCommandDataSig(DataFlag_AlarmInfo, dataArray);
 }
 
@@ -287,10 +287,7 @@ QByteArray EventInfo::getCurrentAlarmData()
         alarmCount++;
         dataArray.append(QByteArray(reinterpret_cast<const char*>(&fireSuppressBioAlarmInfo), sizeof(AlarmInfo)));
     }
-    if(alarmCount>0)
-    {
-        dataArray.prepend(alarmCount);
-    }
+    dataArray.prepend(alarmCount);
     return dataArray;
 }
 

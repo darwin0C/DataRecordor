@@ -2,7 +2,7 @@
 #include "dboperator.h"
 
 const int MaxDisLinkTime=25;
-
+extern bool SDCardStatus;
 DeviceStat::DeviceStat(int deviceId,QObject *parent) : QObject(parent)
 {
     thisDeviceID=deviceId & 0xFF;
@@ -39,6 +39,24 @@ bool DeviceStat::refreshStat(DeviceStatusInfo Stat)
 
 void DeviceStat::timerStatHandle()
 {
+    if(thisDeviceID==0x89)//记录仪本身
+    {
+        //qDebug()<<"thisDeviceID"<<thisDeviceID<<"DeviceLinkStat "<<DeviceLinkStat;
+        if(!SDCardStatus)
+        {
+            DeviceLinkStat=Device_Stat_Fault;
+        }
+        else
+        {
+            DeviceLinkStat=Device_Stat_Normal;
+        }
+        if(lastDeviceStat.deviceStatus.Status!=DeviceLinkStat)
+        {
+            lastDeviceStat.deviceStatus.Status=DeviceLinkStat;
+            emit sig_StatChanged(lastDeviceStat);
+        }
+        return;
+    }
     if(DeviceLinkStat!=Device_Stat_DisLink)
     {
         LinkCount++;

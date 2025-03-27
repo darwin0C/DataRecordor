@@ -131,7 +131,7 @@ struct GunFiringData {
 
 
 struct DeviceTotalWorkTime {
-    int deviceId        ;// 设备ID
+    quint8 deviceId        ;// 设备ID
     int totalWorkTime   ;// 总工作时间
 };
 

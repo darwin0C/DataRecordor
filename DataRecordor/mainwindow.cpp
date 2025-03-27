@@ -3,7 +3,7 @@
 #include <QDateTime>
 #include "MsgSignals.h"
 
-
+bool SDCardStatus=true;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -253,7 +253,7 @@ void MainWindow::timerSendStatus()
     dataToSend.usedPercentage=mySaveDataThread->diskUsedPercent();
     dataToSend.checkCode=calculateCheckCode(&dataToSend);
     QByteArray data((char *)&dataToSend,sizeof(SerialDataSend));
-
+    SDCardStatus=(dataToSend.sdCardStat==0x0F);
     sendData(data);
 }
 

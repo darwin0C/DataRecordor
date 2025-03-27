@@ -233,6 +233,7 @@ QByteArray DeviceManager::getDeviceTotalWorktime(int deviceAddress, int &deviceC
             if(deviceAddress == 0 || (it.key() & 0xFF) == deviceAddress) // 优先级修正
             {
                 DeviceTotalWorkTime deviceWorkTime = it.value()->deviceWorkTime();
+                deviceWorkTime.totalWorkTime=deviceWorkTime.totalWorkTime/60.0*10;
                 array.append(QByteArray(reinterpret_cast<const char*>(&deviceWorkTime), sizeof(DeviceTotalWorkTime)));
                 deviceCount++;
                 if(deviceAddress != 0) // 如果找到指定设备，直接返回

@@ -147,6 +147,7 @@ void CommandCtrol::sendHisData(Send2CommandData sendData,int dataFlag,int device
 
 void CommandCtrol::SendRTDataToCommand(int dataFlag,int deviceAddress)
 {
+    qDebug()<<"SendRTDataToCommand:"<<dataFlag;
     Send2CommandData sendData;
     sendData.selfAttribute=selfAttribute;
     //sendData.selfUniqueID=selfUniqueID;
@@ -168,6 +169,7 @@ void CommandCtrol::SendRTDataToCommand(int dataFlag,int deviceAddress)
         sendData.dataPacketIndedx=0;
         sendCommandData(sendData,requreCurrentData(dataFlag,deviceAddress));
     }
+    qDebug()<<"dataFlag :"<<dataFlag<<" Send2CommandData:"<<QByteArray((char *)&sendData,sizeof(Send2CommandData)).toHex();
 }
 void CommandCtrol::autoSendCommandDataHandle(int dataFlag, QByteArray dataArray)
 {

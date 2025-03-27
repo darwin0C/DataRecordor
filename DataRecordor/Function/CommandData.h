@@ -40,11 +40,11 @@ typedef struct
 
 typedef struct
 {
-    quint16 selfAttribute   ;//本车属性
+    quint8 selfAttribute    ;//本车属性
     char selfUniqueID[10]   ;//本车唯一ID
     quint8 dataFlag         ;//数据标识
     quint8 dataType         ;//数据类型0：实时数据 1：历史数据
-    quint8 dataPacketIndedx ;//数据包序号
+    quint16 dataPacketIndedx ;//数据包序号
 } Send2CommandData;
 
 
