@@ -34,7 +34,7 @@ FORMS += \
 
 DEFINES += LINUX_MODE
 
-DEFINES += TEST_MODE
+#DEFINES += TEST_MODE
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
