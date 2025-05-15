@@ -68,17 +68,18 @@ void QMyCom::reciveComData()
     QByteArray tempData = mySeriCom->readAll();
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        qDebug()<<"data rev:"<<tempData.toHex();
+        //qDebug()<<"data rev:"<<tempData.toHex();
+        comDataHandle();
     }
 }
 
 void QMyCom::run()
 {
-    while(isOpen)
-    {
-        comDataHandle();
-        msleep(10);
-    }
+    //    while(isOpen)
+    //    {
+    //        comDataHandle();
+    //        msleep(10);
+    //    }
 }
 void QMyCom::comDataHandle()
 {
@@ -93,10 +94,10 @@ void QMyCom::comDataHandle()
         unsigned char flag=tembuff[1];
         if(head!=0XC1 || flag!=0x0A)
         {
+            qDebug() << "head or error"<<head<<flag;
             myComRxBuff->MoveReadP(1);
             continue;
         }
-
         if (andCheck(tembuff,MinPacketLength)) //判断收到的数据是否正确
         {
             myComRxBuff->Get(&stFromOPCData,MinPacketLength);
@@ -105,7 +106,11 @@ void QMyCom::comDataHandle()
             emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
             emit MsgSignals::getInstance()->canDataSig(CanDataRev);
         }else
+        {
+            qDebug() << "check error=========================="<<QByteArray((char *)tembuff,MinPacketLength).toHex();
             myComRxBuff->MoveReadP(1);
+        }
+
     }
 }
 

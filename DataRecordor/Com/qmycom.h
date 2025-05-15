@@ -45,11 +45,13 @@ private:
     void run();
     bool andCheck(unsigned char *pBuf, unsigned int FrameSize);
 
+    void parseFrames();
 public slots:
     void closeComInterface();
     void comDataHandle();
     void sendCanMegSigHandle(QByteArray array);
     void reciveComData();
+
 };
 
 #endif // QMYCOM_H

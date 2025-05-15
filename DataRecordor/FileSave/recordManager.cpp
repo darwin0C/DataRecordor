@@ -32,7 +32,7 @@ QString RecordManager::getRecordData(SerialDataRev dataRev)
     QByteArray array((char *)dataRev.candata.data,8);
     can_data=array.toHex().toUpper();
 
-    dateSave=QString("%1 ,prot:%2 : ID:%3, data:%4\n")
+    dateSave=QString("%1 ,prot:%2 : ID:%3, data:%4\r")
             .arg(time)
             .arg(dataRev.port)
             .arg(can_id)
