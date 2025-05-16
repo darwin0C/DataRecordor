@@ -23,9 +23,11 @@ public:
 signals:
     void canDataSig(CanData);
     void serialDataSig(SerialDataRev);
+    void serialOrigenDataSig(QByteArray);
     void commandDataSig(quint16,quint16,QByteArray);
     void sendLEDStatSig();
     void sendCheckDiskSig();
+    void sendCpuinfo(double);
     void startAutoSend(bool);
 private:
     // 构造函数私有化，确保外部无法直接创建对象

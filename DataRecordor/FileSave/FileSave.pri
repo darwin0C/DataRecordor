@@ -25,10 +25,12 @@ INCLUDEPATH += $$PWD
 
 HEADERS += \
     $$PWD/FileSaveData.h \
+    $$PWD/cpu_monitor.h \
     $$PWD/qfilesavethead.h \
     $$PWD/recordManager.h
 
 SOURCES += \
+    $$PWD/cpu_monitor.cpp \
     $$PWD/qfilesavethead.cpp \
     $$PWD/recordManager.cpp
 

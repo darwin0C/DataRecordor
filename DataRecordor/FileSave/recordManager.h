@@ -8,6 +8,7 @@
 #include <QProcess>
 #include <QDateTime>
 #include <QTextStream>
+#include <QTimer>
 #include "FileSave/FileSaveData.h"
 #include "data.h"
 #include <QVector>
@@ -22,7 +23,7 @@ class RecordManager : public QThread
     QMutex mutex,fileMutex;
 
     QProcess *process;
-
+    QTimer    *existTmr;            // ◆ 新增：定时器
     QTextStream* txtOutput;
 
     QString currentDate;
@@ -53,12 +54,14 @@ public:
     int diskFree;
     bool isSDCardOK=true;
 
+    ~RecordManager();
 signals:
     void creatFileSig(QString);
 
 private slots:
     void readDiskData();
     void onCheckDisk();
+    void onCheckFileExists();      // ◆ 新增：定时检查文件存在性
 };
 
 #endif // RECORDTHREAD_H

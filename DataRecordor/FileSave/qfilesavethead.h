@@ -42,11 +42,11 @@ public:
 
 private:
     RecordManager recordManager;
-    QTimer *savTmr=NULL;
+
     // 大缓存区
     QMutex    m_mutexOverflow;
     QByteArray m_overflow;
-
+    double cpuUsedpercent=0;
 public:
     bool CreatFile(QString qsFilePath); //打开文件
     int GetCacheSize() const;
@@ -58,14 +58,16 @@ public:
     int diskUsedPercent();
     int diskRemains();
     bool sdCardStat();
+    void onRevCpuinfo(double usedPer);
 public slots:
     void revCANData(CanDataBody canData);
     void revSerialData(SerialDataRev serialData);
     void delAllFiles();
+    void revOrigenDataSig(QByteArray data);
 protected:
     virtual void run() override;
 private slots:
-    void onTimeSaveFile();
+
     void onCreatNewFile(QString fileName);
 
 };

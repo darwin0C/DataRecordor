@@ -9,10 +9,12 @@ QMyCom::QMyCom(QObject *parent):
     QThread(parent)
 {
 
-    mySeriCom=new QSerialPort(this);
+    mySeriCom=new QSerialPort();
     connect(mySeriCom, &QSerialPort::readyRead, this, &QMyCom::reciveComData);
     isOpen=false;
     myComRxBuff=new QTCQueue(10240);
+    connect(&timer,&QTimer::timeout,this,[this](){revDataCount=0;});
+    timer.start(1000*5);
 }
 QMyCom::~QMyCom()
 {
@@ -68,9 +70,13 @@ void QMyCom::reciveComData()
     QByteArray tempData = mySeriCom->readAll();
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        //qDebug()<<"data rev:"<<tempData.toHex();
+        if(revDataCount++<10)
+        {
+            qDebug()<<"data rev:"<<tempData.toHex();
+        }
         comDataHandle();
     }
+    //emit MsgSignals::getInstance()->serialOrigenDataSig(text.toLatin1().data());
 }
 
 void QMyCom::run()
@@ -94,7 +100,7 @@ void QMyCom::comDataHandle()
         unsigned char flag=tembuff[1];
         if(head!=0XC1 || flag!=0x0A)
         {
-            qDebug() << "head or error"<<head<<flag;
+            qDebug() << "head or flag error"<<head<<flag;
             myComRxBuff->MoveReadP(1);
             continue;
         }
@@ -104,7 +110,7 @@ void QMyCom::comDataHandle()
             memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
             //qDebug() << "emit serialDataSig==========================";
             emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
-            emit MsgSignals::getInstance()->canDataSig(CanDataRev);
+            //emit MsgSignals::getInstance()->canDataSig(CanDataRev);
         }else
         {
             qDebug() << "check error=========================="<<QByteArray((char *)tembuff,MinPacketLength).toHex();

@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include "MsgSignals.h"
 
+
 bool SDCardStatus=true;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,8 +25,36 @@ MainWindow::MainWindow(QWidget *parent)
     connect(mp_TCPServer, SIGNAL(newConnection()), this, SLOT(ServerNewConnection()));
     connect(MsgSignals::getInstance(),&MsgSignals::sendLEDStatSig,this,&MainWindow::changeLEDStat);
     //Test();
+    startcpuMonitor();
 }
+void MainWindow::startcpuMonitor()
+{
+    cpuThread= new QThread(this);
+    // 把 monitor 移到后台线程
+    monitor = new QCpuMonitor();
+    monitor->moveToThread(cpuThread);
 
+    // 线程启动后调用 monitor->start(...)
+    connect(cpuThread, &QThread::started, [=]() {
+        monitor->start(50);  //
+    });
+
+    // 线程结束后自动 delete monitor 与 delete cpuThread
+    connect(cpuThread, &QThread::finished, monitor, &QObject::deleteLater);
+    connect(cpuThread, &QThread::finished, cpuThread, &QObject::deleteLater);
+
+    // 监控信号连到主线程 UI 更新
+    connect(monitor, &QCpuMonitor::cpuUsage, this, [this](double cpuUsed){
+        if(cpuUsed>5)
+            emit MsgSignals::getInstance()->sendCpuinfo(cpuUsed);
+    });
+
+    // 主窗口析构时停止线程
+    connect(this, &QObject::destroyed,cpuThread, &QThread::quit);
+
+    // 启动后台线程
+    cpuThread->start();
+}
 void MainWindow::Test()
 {
     QTimer *timerTest=new QTimer();
@@ -117,7 +146,7 @@ void MainWindow::startStatus()
 
     // 使用 lambda 表达式在线程启动后启动定时器
     connect(StatusTimerThread, &QThread::started, [this]() {
-        timerStatus->start(1000); // 每秒触发一次
+        timerStatus->start(2000); // 每秒触发一次
     });
 
     // 连接定时器的超时信号到状态发送槽函数
@@ -156,6 +185,9 @@ void MainWindow::startRecord()
 
         qRegisterMetaType<SerialDataRev>("SerialDataRev");//自定义类型需要先注册
         connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThead::revSerialData);
+        connect(MsgSignals::getInstance(),&MsgSignals::serialOrigenDataSig,mySaveDataThread,&QFileSaveThead::revOrigenDataSig);
+         connect(MsgSignals::getInstance(),&MsgSignals::sendCpuinfo,mySaveDataThread,&QFileSaveThead::onRevCpuinfo);
+
         connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThead::delAllFiles);
     }
     mySaveDataThread->startRecord();
