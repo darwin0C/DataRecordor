@@ -42,7 +42,7 @@ public:
 
 private:
     RecordManager recordManager;
-
+    char *writeBuffer;
     // 大缓存区
     QMutex    m_mutexOverflow;
     QByteArray m_overflow;

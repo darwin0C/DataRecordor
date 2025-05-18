@@ -5,6 +5,7 @@
 #include <QTimer>
 #include "MsgSignals.h"
 
+const int CHUNK = 256*1024;
 QFileSaveThead::QFileSaveThead(QObject *parent)
     : QThread(parent)
     , m_usedSpace(0)
@@ -22,17 +23,11 @@ QFileSaveThead::QFileSaveThead(QObject *parent)
     // —— 预分配大缓存区，避免 m_overflow 频繁重分配 ——
     const int BIG_CACHE_SIZE = 50 * 1024 * 1024;  // 50 MB
     m_overflow.reserve(BIG_CACHE_SIZE);
+    writeBuffer=new  char[CHUNK];
 }
 
 QFileSaveThead::~QFileSaveThead()
 {
-    //    m_mutexQueue.lock(); //进入临界区
-    //    m_bStop = true;
-    //    m_usedSpace.release();
-    //    this->wait();
-    //    m_mutexQueue.unlock(); //离开临界区
-    //    CloseFile();
-    //    ClearBuf();
 
     stopRecord();       // 停止定时器并发信号
     wait();             // 等待 run() 自然退出
@@ -63,12 +58,9 @@ void QFileSaveThead::onCreatNewFile(QString fileName)
 }
 void QFileSaveThead::revOrigenDataSig(QByteArray data)
 {
-
     if (m_bStop) return;
-    //qDebug()<<"revOrigenDataSig"<<data.toHex();
-    //QByteArray data = recordManager.getRecordData(serialData).toLocal8Bit();
-
-    data.append('\r\n');
+    data.append('\r');
+    data.append('\n');
     // 1) 先将 overflow 里的旧数据尽量塞回 ring
     {
         QMutexLocker lock(&m_mutexOverflow);
@@ -81,7 +73,6 @@ void QFileSaveThead::revOrigenDataSig(QByteArray data)
             m_overflow.remove(0, chunk);
         }
     }
-
     // 2) 再塞入本次 data；若 ring 满，则打入 overflow
     if (m_ring->FreeCount() >= data.size()) {
         m_ring->Add(data.data(), data.size());
@@ -218,8 +209,7 @@ void QFileSaveThead::run()
     timer.start();
     qint64 lastFlush = 0;
 
-    const int CHUNK = 256*1024;
-    char tmp[CHUNK];
+
     int loopCounter = 0;
     while (!m_bStop) {
         m_usedSpace.acquire();          // 等待数据
@@ -230,15 +220,14 @@ void QFileSaveThead::run()
 
         int readCounter=0;
         do {
-            got = m_ring->Get(tmp + total, CHUNK - total);
+            got = m_ring->Get(writeBuffer + total, CHUNK - total);
             total += got;
             readCounter++;
-            QThread::msleep(5);
         } while (/*cpuUsedpercent<70 &&*/ readCounter < 2000 && total < CHUNK);
 
         if (total > 0 && m_file.isOpen()) {
             QMutexLocker lock(&m_mutex);
-            m_file.write(tmp, total);
+            m_file.write(writeBuffer, total);
             qDebug()<<" m_file.write bytes===="<<total;
         }
 

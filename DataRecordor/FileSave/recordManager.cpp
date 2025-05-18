@@ -2,8 +2,9 @@
 #include <QDebug>
 #include "MsgSignals.h"
 #include <QFileInfo>
+#ifdef LINUX_MODE
 #include <sys/statvfs.h>
-
+#endif
 RecordManager::RecordManager()
 {
     process = new QProcess(this);
@@ -265,6 +266,7 @@ void RecordManager::newfile(QString date,QString time)
 //}
 void RecordManager::onCheckDisk()
 {
+#ifdef LINUX_MODE
     // 1) 打开 /proc/mounts
     QFile mnts("/proc/mounts");
     if (!mnts.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -317,6 +319,7 @@ void RecordManager::onCheckDisk()
     if (diskFree < diskMinFree) {
         delOldestFile();
     }
+#endif
 }
 
 void RecordManager::onCheckFileExists()
