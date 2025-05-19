@@ -10,6 +10,7 @@
 #include "CommandCtrol.h"
 #include <QTcpServer>
 #include <QTcpSocket>
+#include "cpu_monitor.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -39,11 +40,13 @@ private:
     QThread* ledTimerThread;
     QTimer *timerStatus;
     QThread* StatusTimerThread;
+    QThread* cpuThread;
     CommandCtrol *commandCtrol;
     QThread* commandThread;
     int ledBlankTimes = 0;
     QTcpServer* mp_TCPServer;
     QTcpSocket* mp_TCPSocket;
+    QCpuMonitor  *monitor=nullptr;
     void socket_Send_Data(QString dataSend);
 
     void startRecord();
@@ -55,6 +58,7 @@ private:
     void startCommandCtrl();
     void sendtestData();
     void Test();
+    void startcpuMonitor();
 signals:
     void sendCanData(CanDataBody);
     void delAllFilesSig();

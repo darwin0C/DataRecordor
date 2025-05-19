@@ -30,6 +30,8 @@ typedef struct
 class QMyCom : public QThread
 {
     Q_OBJECT
+    int revDataCount=0;
+    QTimer timer;
 public:
     explicit QMyCom(QObject *parent = 0);
     ~QMyCom();
@@ -38,18 +40,20 @@ public:
     QTCQueue *myComRxBuff;
     bool initComInterface(const QString &port, int baund);
     bool isComInterfaceOpen();
-//    int sendData(uint canID, uchar *buff, unsigned char len);
-//    int sendData(char *buff, int len);
+    //    int sendData(uint canID, uchar *buff, unsigned char len);
+    //    int sendData(char *buff, int len);
 private:
     int  commFrameXorNohead(unsigned char *pBuf, unsigned char cFrameHead, unsigned char cFrameTail, unsigned int FrameSize);
     void run();
     bool andCheck(unsigned char *pBuf, unsigned int FrameSize);
 
+    void parseFrames();
 public slots:
     void closeComInterface();
     void comDataHandle();
     void sendCanMegSigHandle(QByteArray array);
     void reciveComData();
+
 };
 
 #endif // QMYCOM_H

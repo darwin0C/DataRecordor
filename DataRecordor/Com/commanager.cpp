@@ -186,7 +186,7 @@ int ComManager::sendCanData(uint canID,uchar *buff,unsigned char len)
 
 void ComManager::senSerialDataByCom(QByteArray array,int comIndex)
 {
-    qDebug()<<"senSerialDataByCom port:"<<comIndex<<"data:"<<array.toHex();
+    //qDebug()<<"senSerialDataByCom port:"<<comIndex<<"data:"<<array.toHex();
     if(comIndex==0)
     {
         if(serialCom1 && serialCom1->isOpen)

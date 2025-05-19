@@ -9,7 +9,7 @@
 #include "FileSave/recordManager.h"
 #include <QTimer>
 #include "data.h"
-
+#include "qtcqueue.h"
 class QFileSaveThead : public QThread
 {
     Q_OBJECT
@@ -21,42 +21,55 @@ public:
     volatile bool m_bStop;
     QMutex m_mutex;
     QMutex m_mutexQueue;
-    QSemaphore m_freeSpace;
-    QSemaphore m_usedSpace;
-    QQueue<TDataBuffer> m_queueDataBuffer;
+
+    //    QSemaphore m_freeSpace;
+    //    QSemaphore m_usedSpace;
+    //    QQueue<TDataBuffer> m_queueDataBuffer;
+
+    // 用 QTCQueue 代替原来的队列与堆缓冲
+    QTCQueue  *m_ring;          // 单一环形缓冲区
+    QSemaphore m_usedSpace;     // 信号量：写线程等待 ring 有数据
+
+
     QFile m_file;     //存储文件
     int m_nCacheSize; //缓存大小默认1MB
-    byte *m_pBuffer;  //缓存数据
-    int m_nWritePos;  //写入位置
+    //小缓冲不再需要，改为临时栈缓冲
+    //    byte *m_pBuffer;  //缓存数据
+    //    int m_nWritePos;  //写入位置
+
     bool m_bOpen;
     QString m_qsFilePath;
 
 private:
-    void ClearBuf(void); //清除Buffer
     RecordManager recordManager;
-    QTimer *savTmr=NULL;
+    char *writeBuffer;
+    // 大缓存区
+    QMutex    m_mutexOverflow;
+    QByteArray m_overflow;
+    double cpuUsedpercent=0;
 public:
     bool CreatFile(QString qsFilePath); //打开文件
     int GetCacheSize() const;
     void SetCacheSize(int nCacheSize);
-    void WriteFile(byte *pBuffer, int nLen); //写文件
     void CloseFile();                        //关闭写文件
 
-    void saveStringData(const QString &data);
     void startRecord();
     void stopRecord();
     int diskUsedPercent();
     int diskRemains();
     bool sdCardStat();
+    void onRevCpuinfo(double usedPer);
 public slots:
     void revCANData(CanDataBody canData);
     void revSerialData(SerialDataRev serialData);
     void delAllFiles();
+    void revOrigenDataSig(QByteArray data);
 protected:
     virtual void run() override;
 private slots:
-    void onTimeSaveFile();
+
     void onCreatNewFile(QString fileName);
+
 };
 
 #endif // QFILESAVETHEAD_H
