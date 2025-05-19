@@ -211,7 +211,7 @@ void QFileSaveThead::run()
                 if (m_file.isOpen())
                 {
                     m_file.write((char *) tDataBuffer.pBuffer, tDataBuffer.nLen);
-                    m_file.flush();
+                    //m_file.flush();
                 }
                 // delete[] tDataBuffer.pBuffer;
             }
