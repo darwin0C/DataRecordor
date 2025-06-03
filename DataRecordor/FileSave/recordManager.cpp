@@ -7,6 +7,9 @@
 #endif
 RecordManager::RecordManager()
 {
+    const int BIG_CACHE_SIZE = 50 * 1024 * 1024;  // 50 MB
+    dataArrayBuffer.reserve(BIG_CACHE_SIZE);
+
     process = new QProcess(this);
     connect(process, SIGNAL(readyRead()), this, SLOT(readDiskData()));
     connect(MsgSignals::getInstance(),&MsgSignals::sendCheckDiskSig,this,&RecordManager::onCheckDisk);
@@ -17,10 +20,25 @@ RecordManager::RecordManager()
     existTmr->start();
 }
 
+void RecordManager::revSerialData(SerialDataRev serialData)
+{
+    static int datacout=0;
+    datacout++;
+    QByteArray data = getRecordData(serialData).toLocal8Bit();
+    data.append('\n');
+    {
+        QMutexLocker lock(&m_mutexDataArray);
+        dataArrayBuffer.append(data);
+    }
+    if(datacout%100==0)
+    {
+        emit haveDataRev();
+        qDebug() << "revSerialData=========================="<<datacout;
+    }
+}
+
 QString RecordManager::getRecordData(SerialDataRev dataRev)
 {
-    //qDebug() << "getRecordData==========================";
-
     // 1) 用 QDateTime 格式化，替代多次 QString::arg
     QDateTime dt(
                 QDate(dataRev.candata.dateTime.year,
@@ -35,9 +53,8 @@ QString RecordManager::getRecordData(SerialDataRev dataRev)
     QString time = dt.time().toString("HH:mm:ss.zzz");        // e.g. "12:34:56.789"
 
     // 2) 十六进制 ID 和 data
-    QString can_id = QString::number(dataRev.candata.dataid, 16)
-            .toUpper()
-            .rightJustified(8, '0');
+    QString can_id = QString::number(dataRev.candata.dataid, 16).toUpper().rightJustified(8, '0');
+
     QByteArray raw(reinterpret_cast<const char*>(dataRev.candata.data), 8);
     QString can_data = QString::fromLatin1(raw.toHex().toUpper());
 
@@ -45,7 +62,6 @@ QString RecordManager::getRecordData(SerialDataRev dataRev)
             " : ID:" + can_id + ", data:" + can_data + "\r";
 
     checkTime(date,time);
-
     return dateSave;
 }
 
