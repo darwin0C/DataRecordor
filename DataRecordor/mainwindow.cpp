@@ -181,13 +181,13 @@ void MainWindow::startRecord()
 {
     if(mySaveDataThread==nullptr)
     {
-        mySaveDataThread=new QFileSaveThead(this);
+        mySaveDataThread=new QFileSaveThread(this);
 
         qRegisterMetaType<SerialDataRev>("SerialDataRev");//自定义类型需要先注册
         //connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThead::revSerialData);
-        connect(MsgSignals::getInstance(),&MsgSignals::sendCpuinfo,mySaveDataThread,&QFileSaveThead::onRevCpuinfo);
+        connect(MsgSignals::getInstance(),&MsgSignals::sendCpuinfo,mySaveDataThread,&QFileSaveThread::onRevCpuinfo);
 
-        connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThead::delAllFiles);
+        connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThread::delAllFiles);
     }
     mySaveDataThread->startRecord();
     emit MsgSignals::getInstance()->sendCheckDiskSig();

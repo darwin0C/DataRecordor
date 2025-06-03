@@ -1,132 +1,84 @@
 #include "recordManager.h"
 #include <QDebug>
 #include "MsgSignals.h"
+#include <QDirIterator>
 #include <QFileInfo>
 #ifdef LINUX_MODE
 #include <sys/statvfs.h>
 #endif
 RecordManager::RecordManager()
 {
-    const int BIG_CACHE_SIZE = 50 * 1024 * 1024;  // 50 MB
-    dataArrayBuffer.reserve(BIG_CACHE_SIZE);
-
-    process = new QProcess(this);
-    connect(process, SIGNAL(readyRead()), this, SLOT(readDiskData()));
     connect(MsgSignals::getInstance(),&MsgSignals::sendCheckDiskSig,this,&RecordManager::onCheckDisk);
+    checkTmr = new QTimer(this);
+    checkTmr->setInterval(10*1000);        // 10 s 足够
+    connect(checkTmr, &QTimer::timeout, this, &RecordManager::onCheckDisk);
+    checkTmr->start();
     // 定时检查当前文件存在性
     existTmr = new QTimer(this);
-    existTmr->setInterval(5000);
+    existTmr->setInterval(5*1000);
     connect(existTmr, &QTimer::timeout, this, &RecordManager::onCheckFileExists);
     existTmr->start();
 }
 
-void RecordManager::revSerialData(SerialDataRev serialData)
+QString RecordManager::getRecordData(const SerialDataRev &dataRev)
 {
-    static int datacout=0;
-    datacout++;
-    QByteArray data = getRecordData(serialData).toLocal8Bit();
-    data.append('\n');
-    {
-        QMutexLocker lock(&m_mutexDataArray);
-        dataArrayBuffer.append(data);
-    }
-    if(datacout%100==0)
-    {
-        emit haveDataRev();
-        qDebug() << "revSerialData=========================="<<datacout;
-    }
-}
+    /* ---------- 1) 拆分日期与时间 ---------- */
+    const auto &dt = dataRev.candata.dateTime;
 
-QString RecordManager::getRecordData(SerialDataRev dataRev)
-{
-    // 1) 用 QDateTime 格式化，替代多次 QString::arg
-    QDateTime dt(
-                QDate(dataRev.candata.dateTime.year,
-                      dataRev.candata.dateTime.month,
-                      dataRev.candata.dateTime.day),
-                QTime(dataRev.candata.dateTime.hour,
-                      dataRev.candata.dateTime.minute,
-                      dataRev.candata.dateTime.second,
-                      dataRev.candata.dateTime.msec)
-                );
-    QString date = dt.date().toString("yyyy_MMdd");           // e.g. "2025_0404"
-    QString time = dt.time().toString("HH:mm:ss.zzz");        // e.g. "12:34:56.789"
+    char dateBuf[12];   // "yyyy_MMdd" => 9 字节 + '\0'
+    int  dateLen = std::snprintf(dateBuf, sizeof(dateBuf),
+                                 "%04d_%02d%02d",
+                                 dt.year, dt.month, dt.day);
 
+    char timeBuf[16];  // "HH:mm:ss.zzz" => 12 字节 + '\0'
+    int  timeLen = std::snprintf(timeBuf, sizeof(timeBuf),
+                                 "%02d:%02d:%02d.%03d",
+                                 dt.hour, dt.minute, dt.second, dt.msec);
+
+    QString date = QString::fromLatin1(dateBuf,  dateLen);
+    QString time = QString::fromLatin1(timeBuf,  timeLen);
+
+    /* 先更新日期切换、建新文件等逻辑 */
+    checkTime(date, time);
+    /* ---------- 2) 继续拼接头部 ---------- */
+    char headBuf[64];
+    int headLen = std::snprintf(headBuf, sizeof(headBuf),
+                                "%s %s ,prot:%d : ",
+                                dateBuf, timeBuf, dataRev.port);
+    QString head = QString::fromLatin1(headBuf, headLen);
     // 2) 十六进制 ID 和 data
-    QString can_id = QString::number(dataRev.candata.dataid, 16).toUpper().rightJustified(8, '0');
-
+    QString can_id = QString::number(dataRev.candata.dataid, 16)
+            .toUpper()
+            .rightJustified(8, '0');
     QByteArray raw(reinterpret_cast<const char*>(dataRev.candata.data), 8);
     QString can_data = QString::fromLatin1(raw.toHex().toUpper());
 
-    QString dateSave = time + " ,prot:" + QString::number(dataRev.port) +
-            " : ID:" + can_id + ", data:" + can_data + "\r";
+    QString dateSave = head + "ID:" + can_id + ", data:" + can_data + QLatin1String("\r");
 
-    checkTime(date,time);
     return dateSave;
 }
 
 void RecordManager::checkTime(QString date,QString time)
 {
-    if(!isTimeSet)
-    {
-        QString setData=date.left(4)+"-"+date.mid(5,2)+"-"+date.right(2);
-        SetSysTime(setData,time.left(8));
+    if (!isTimeSet) {
+        SetSysTime(date.left(4) + "-" + date.mid(5,2) + "-" + date.right(2),
+                   time.left(8));
     }
-    if(date!=revDate || time.left(2)!=revTime)
-    {
-        revDate=date;
-        revTime=time.left(2);
-    }
-    fileMutex.lock();
-    //qDebug()<<"<<<<<<<<<if(isSDCardOK)=========";
-    if(isSDCardOK)
-    {
-        if(revTime.length()>=2)
-            creatNewFile(revDate,revTime);
-    }
-    fileMutex.unlock();
+    if (date == revDate && time.left(2) == revTime)
+        return;                         // 早退，减小临界区
+    revDate = date;
+    revTime = time.left(2);
+
+    QMutexLocker locker(&fileMutex);    // RAII 加锁
+    if (isSDCardOK && revTime.length() >= 2)
+        creatNewFile(revDate, revTime);
 }
 RecordManager::~RecordManager()
 {
-    process->kill();
+
 }
 
-bool RecordManager::checkData(QString dataRev)//校验数据
-{
-    int len=dataRev.length();
-    if((dataRev.left(2).toInt(NULL,16))==0xC1 && len==26*2)
-    {
-        if(getCheckNum(dataRev)==dataRev.right(2).toInt(NULL,16))
-            return true;
-    }
-    return false;
-}
-int RecordManager::getCheckNum(QString data)
-{
-    int sum=0;
-    if(data.length()>4)
-    {
-        for(int i =1;i<data.length()/2-1;i++)
-        {
-            sum+=data.mid(i*2,2).toInt(NULL,16);
-        }
-        sum=sum&0xFF;
-    }
-    return sum;
-}
-void RecordManager::readDiskData()
-{
-    isSDCardOK=true;
-    while (!process->atEnd()) {
-        QString result = QLatin1String(process->readLine());
-        if (result.startsWith("/dev/mmcblk")) {
-            checkSize(result);
-            isSDCardOK=true;
-            break;
-        }
-        isSDCardOK=false;
-    }
-}
+
 void RecordManager::checkSize(const QString &result)
 {
     //qDebug()<<"checkSize"<<result;
@@ -170,30 +122,44 @@ void RecordManager::checkSize(const QString &result)
     //        process->start("df -k");
     //    }
 }
-
-void RecordManager::delOldestFile(void)
+QString RecordManager::findOldestFile() const
 {
-    QVector<QString> path_vec;
-    path_vec.clear();
-    getAllFileName(gPath,path_vec);
-    QString filename="";
-    if(path_vec.count()>0)
-    {
-        QFileInfo fileInfo_server(path_vec[0]);
-        QDateTime tempModifiedTime=fileInfo_server.lastModified().toLocalTime();
-        filename=path_vec[0];
-        //QVector<QString>::iterator iter;
-        for (auto iter=path_vec.begin();iter!=path_vec.end();iter++)
-        {
-            QFileInfo fileInfo_server(*iter);
-            QDateTime lastModifiedTime =fileInfo_server.lastModified().toLocalTime();
-            if(lastModifiedTime<tempModifiedTime)
-            {
-                tempModifiedTime=lastModifiedTime;
-                filename=*iter;
-            }
+    QDirIterator it(gPath, QDir::Files, QDirIterator::Subdirectories);
+    QString oldestFile;
+    QDateTime oldest = QDateTime::currentDateTimeUtc();
+    while (it.hasNext()) {
+        QFileInfo fi(it.next());
+        if (fi.lastModified() < oldest) {
+            oldest = fi.lastModified();
+            oldestFile = fi.filePath();
         }
     }
+    return oldestFile;
+}
+void RecordManager::delOldestFile(void)
+{
+    //    QVector<QString> path_vec;
+    //    path_vec.clear();
+    //    getAllFileName(gPath,path_vec);
+    //    QString filename="";
+    //    if(path_vec.count()>0)
+    //    {
+    //        QFileInfo fileInfo_server(path_vec[0]);
+    //        QDateTime tempModifiedTime=fileInfo_server.lastModified().toLocalTime();
+    //        filename=path_vec[0];
+    //        //QVector<QString>::iterator iter;
+    //        for (auto iter=path_vec.begin();iter!=path_vec.end();iter++)
+    //        {
+    //            QFileInfo fileInfo_server(*iter);
+    //            QDateTime lastModifiedTime =fileInfo_server.lastModified().toLocalTime();
+    //            if(lastModifiedTime<tempModifiedTime)
+    //            {
+    //                tempModifiedTime=lastModifiedTime;
+    //                filename=*iter;
+    //            }
+    //        }
+    //    }
+    QString filename=findOldestFile();
     if(filename!="")
     {
         QFile fileTemp(filename);
@@ -251,35 +217,28 @@ void RecordManager::creatNewFile(QString date,QString time)
 }
 void RecordManager::newfile(QString date,QString time)
 {
+    QMutexLocker locker(&fileMutex);    // 保证与其它文件操作互斥
     QString fileDir=gPath+"ebd_"+date.replace(4,1,'_');
     QDir dir;
     if (!dir.exists(fileDir))
     {
         dir.mkpath(fileDir);
     }
-    QString fileName=fileDir+"/ebd_can_"+time.left(2);
-    qDebug()<<"<<<<<<<<<fileName="<<fileName;
+    QString dirPath=fileDir+"/ebd_can_"+time.left(2);
+    //qDebug()<<"<<<<<<<<<fileName="<<dirPath;
 
     static int index=0;
-    QFile myFile(fileName + ".txt");
-    QFile nextFile(fileName + "_1.txt");
-    while (myFile.exists() || nextFile.exists()) {
-        ++index;
-        myFile.setFileName(fileName + "_" + QString::number(index) + ".txt");
-        nextFile.setFileName(fileName + "_" + QString::number(index+1) + ".txt");
+    QString base = dirPath + "/ebd_can_" + time.left(2);
+    QFile candidate(base + ".txt");
+    while (candidate.exists()) {
+        candidate.setFileName(base + '_' + QString::number(++index) + ".txt");
     }
-    gCurrentfileName = myFile.fileName();
+    gCurrentfileName = candidate.fileName();
+
     emit creatFileSig(gCurrentfileName);
     //process->start("df -k");
 }
-//void RecordManager::onCheckDisk()
-//{
-//    //qDebug()<<"onCheckDisk";
-//#ifdef LINUX_MODE
-//    process->start("df -k");
-//#endif
 
-//}
 void RecordManager::onCheckDisk()
 {
 #ifdef LINUX_MODE

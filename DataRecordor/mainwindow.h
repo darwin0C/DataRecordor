@@ -19,7 +19,7 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    QFileSaveThead *mySaveDataThread=nullptr;
+    QFileSaveThread *mySaveDataThread=nullptr;
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();

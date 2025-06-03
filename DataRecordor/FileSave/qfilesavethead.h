@@ -10,17 +10,21 @@
 #include <QTimer>
 #include "data.h"
 #include "qtcqueue.h"
-class QFileSaveThead : public QThread
+class QFileSaveThread : public QThread
 {
     Q_OBJECT
 public:
-    explicit QFileSaveThead(QObject *parent = NULL);
-    ~QFileSaveThead();
+    explicit QFileSaveThread(QObject *parent = NULL);
+    ~QFileSaveThread();
 
 public:
     volatile bool m_bStop;
     QMutex m_mutex;
     QMutex m_mutexQueue;
+
+    //    QSemaphore m_freeSpace;
+    //    QSemaphore m_usedSpace;
+    //    QQueue<TDataBuffer> m_queueDataBuffer;
 
     // 用 QTCQueue 代替原来的队列与堆缓冲
     QTCQueue  *m_ring;          // 单一环形缓冲区
@@ -29,18 +33,21 @@ public:
 
     QFile m_file;     //存储文件
     int m_nCacheSize; //缓存大小默认1MB
+    //小缓冲不再需要，改为临时栈缓冲
+    //    byte *m_pBuffer;  //缓存数据
+    //    int m_nWritePos;  //写入位置
 
     bool m_bOpen;
     QString m_qsFilePath;
 
 private:
-    QTimer timer;
-    RecordManager recordManager;
+    RecordManager *recordManager=nullptr ;
     char *writeBuffer;
     // 大缓存区
     QMutex    m_mutexOverflow;
     //QByteArray m_overflow;
     double cpuUsedpercent=0;
+    void pushToRing(char *src, int len);
 public:
     bool CreatFile(QString qsFilePath); //打开文件
     int GetCacheSize() const;
@@ -54,9 +61,10 @@ public:
     bool sdCardStat();
     void onRevCpuinfo(double usedPer);
 public slots:
-    void revSerialData();
+    void revCANData(CanDataBody canData);
+    void revSerialData(SerialDataRev serialData);
     void delAllFiles();
-
+    void revOrigenDataSig(QByteArray data);
 protected:
     virtual void run() override;
 private slots:

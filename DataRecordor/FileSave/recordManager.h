@@ -21,13 +21,16 @@ class RecordManager : public QThread
     Q_OBJECT
 
     QMutex mutex,fileMutex;
-    QProcess *process;
+
+    QTimer *checkTmr;
     QTimer    *existTmr;            // ◆ 新增：定时器
     QTextStream* txtOutput;
+
     QString currentDate;
     QString currentTime;
     QString revDate="",revTime="";
     QString gCurrentfileName="";
+
     bool isTimeSet=false;
 
     void checkSize(const QString &result);
@@ -38,15 +41,12 @@ class RecordManager : public QThread
     void creatNewFile(QString date, QString time);
     void newfile(QString date, QString time);
 
-    bool checkData(QString dataRev);
-    int getCheckNum(QString data);
     void SetSysTime(QString date, QString time);
     void checkTime(QString date, QString hour);
+    QString findOldestFile() const;
 public:
-    QMutex m_mutexDataArray;
-    QString getRecordData(SerialDataRev dataRev);
+    QString getRecordData(const SerialDataRev &dataRev);
     RecordManager();
-    QByteArray dataArrayBuffer;
     int diskUsed;
     int diskAll;
     int diskUsedPercent;
@@ -54,14 +54,11 @@ public:
     bool isSDCardOK=true;
 
     ~RecordManager();
-
-public slots:
-    void revSerialData(SerialDataRev serialData);
 signals:
     void creatFileSig(QString);
-    void haveDataRev();
+
 private slots:
-    void readDiskData();
+
     void onCheckDisk();
     void onCheckFileExists();      // ◆ 新增：定时检查文件存在性
 };

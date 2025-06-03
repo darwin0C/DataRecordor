@@ -5,116 +5,136 @@
 #include <QTimer>
 #include "MsgSignals.h"
 
-const int CHUNK = 256*1024;
-QFileSaveThead::QFileSaveThead(QObject *parent)
+const int CHUNK = 128*1024;
+QFileSaveThread::QFileSaveThread(QObject *parent)
     : QThread(parent)
     , m_usedSpace(0)
 {
     m_bStop = false;
-    m_nCacheSize = 1 * 1024 * 1024; //1MB
+    m_nCacheSize = 50 * 1024 * 1024; //1MB
+    //    m_pBuffer = new byte[m_nCacheSize];  // 预分配 1MB 缓冲
+    //    m_nWritePos = 0;
     m_bOpen = false;
 
-    connect(&timer,&QTimer::timeout,this,[this](){revSerialData();});
-    timer.start(5000);
-
     qRegisterMetaType<CanDataBody>("CanDataBody");//自定义类型需要先注册
-    connect(&recordManager,&RecordManager::creatFileSig,this,&QFileSaveThead::onCreatNewFile);
-
-    connect(&recordManager,&RecordManager::haveDataRev,this,&QFileSaveThead::revSerialData);
-    connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,&recordManager,&RecordManager::revSerialData);
-
+    recordManager=new RecordManager();
+    connect(recordManager,&RecordManager::creatFileSig,this,&QFileSaveThread::onCreatNewFile);
+    recordManager->start();
     // 每100ms 将大缓存数据搬入小缓冲
     m_ring=new QTCQueue(m_nCacheSize);
     writeBuffer=new char[CHUNK];
 }
 
-QFileSaveThead::~QFileSaveThead()
+QFileSaveThread::~QFileSaveThread()
 {
-    stopRecord();       // 停止定时器并发信号
-    wait();             // 等待 run() 自然退出
+    stopRecord();
+    wait();             // 等 run() 退出
     CloseFile();
     delete[] writeBuffer;
-    delete m_ring;
+    delete   m_ring;
 }
 
-void QFileSaveThead::startRecord()
+void QFileSaveThread::startRecord()
 {
     m_bStop = false;
     start(QThread::TimeCriticalPriority);
-    qDebug()<<"save file thread "<<isRunning();
-    //cacheTmr->start(100);    // 每 100ms 触发一次 onCacheTimer()
 }
 
-void QFileSaveThead::stopRecord()
+void QFileSaveThread::stopRecord()
 {
     m_bStop = true;
+    /* 唤醒 run() 一次，防止死等 */
     m_usedSpace.release();
 }
 
-void QFileSaveThead::onCreatNewFile(QString fileName)
+void QFileSaveThread::onCreatNewFile(QString fileName)
 {
     CloseFile();
     CreatFile(fileName);
 }
-
-void QFileSaveThead::onRevCpuinfo(double usedPer)
+/* ======================== 公用 PUSH 接口 ======================== */
+void QFileSaveThread::pushToRing(char *src, int len)
+{
+    int offset = 0;
+    while (offset < len && !m_bStop) {
+        int freeBytes = m_ring->FreeCount();
+        if (freeBytes == 0) {
+            /* ring 满 => 让出 CPU，等 run() 消费 */
+            QThread::yieldCurrentThread();
+            continue;
+        }
+        int chunk = qMin(len - offset, freeBytes);
+        m_ring->Add(src + offset, chunk);
+        offset += chunk;
+        /* 每写入 chunk 字节，给 run() 放行 chunk 次 */
+        m_usedSpace.release(chunk);
+    }
+}
+void QFileSaveThread::revOrigenDataSig(QByteArray data)
+{
+    if (m_bStop) return;
+    data.append('\r');
+    data.append('\n');
+    pushToRing(data.data(), data.size());
+}
+void QFileSaveThread::onRevCpuinfo(double usedPer)
 {
     cpuUsedpercent=usedPer;
     if(cpuUsedpercent>50)
         qDebug()<<"CPU USED Percent :"<<cpuUsedpercent;
 }
 
-void QFileSaveThead::revSerialData()
+void QFileSaveThread::revSerialData(SerialDataRev serialData)
 {
-    QMutexLocker locker(&recordManager.m_mutexDataArray);
-    while (!recordManager.dataArrayBuffer.isEmpty() && m_ring->FreeCount() > 0) {
-        // 按块移动
-        int chunk = qMin<int>(recordManager.dataArrayBuffer.size(),
-                              m_ring->FreeCount());
-        m_ring->Add(recordManager.dataArrayBuffer.data(), chunk);
-        recordManager.dataArrayBuffer.remove(0, chunk);
-        m_usedSpace.release();
-    }
+    if (m_bStop) return;
+
+    static int recvCnt = 0;
+    if (++recvCnt % 1000 == 0)
+        qDebug() << "[Serial] total frames:" << recvCnt;
+
+    QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
+    data.append('\n');
+    pushToRing(data.data(), data.size());
 
 }
 
-int QFileSaveThead::GetCacheSize() const
+void QFileSaveThread::revCANData(CanDataBody canData)
+{
+    if(!m_bStop)
+    {
+        //QString strData=recordManager->getRecordData(canData);
+        //saveStringData(strData);
+    }
+}
+
+int QFileSaveThread::GetCacheSize() const
 {
     return m_nCacheSize;
 }
 
-void QFileSaveThead::SetCacheSize(int nCacheSize)
+void QFileSaveThread::SetCacheSize(int nCacheSize)
 {
     QMutexLocker locker(&m_mutex);
     m_nCacheSize = nCacheSize;
 }
 
-void QFileSaveThead::CloseFile()
+void QFileSaveThread::CloseFile()
 {
     QMutexLocker fileLock(&m_mutex);
     if (!m_bOpen || !m_file.isOpen()) return;
 
     char tmp[CHUNK];
-    while (m_ring->InUseCount()>0) {
+    while (m_ring->InUseCount() > 0) {
         int got = m_ring->Get(tmp, CHUNK);
-        if (got>0) m_file.write(tmp, got);
+        if (got > 0)
+            m_file.write(tmp, got);
     }
-    // 把 overflow 全部写出
-    {
-        QMutexLocker dataLock(&recordManager.m_mutexDataArray);
-        if (!recordManager.dataArrayBuffer.isEmpty()) {
-            m_file.write(recordManager.dataArrayBuffer.constData(),
-                         recordManager.dataArrayBuffer.size());
-            recordManager.dataArrayBuffer.clear();
-        }
-    }
-
     m_file.flush();
     m_file.close();
     m_bOpen = false;
 }
 
-bool QFileSaveThead::CreatFile(QString qsFilePath)
+bool QFileSaveThread::CreatFile(QString qsFilePath)
 {
     m_qsFilePath = qsFilePath;
     QFileInfo fi(qsFilePath);
@@ -140,72 +160,58 @@ bool QFileSaveThead::CreatFile(QString qsFilePath)
     return m_bOpen;
 }
 
-void QFileSaveThead::run()
+void QFileSaveThread::run()
 {
     const qint64 FLUSH_INTERVAL_MS = 10 * 1000;  // 10秒
     QElapsedTimer timer;
     timer.start();
     qint64 lastFlush = 0;
-
-    int loopCounter = 0;
     while (!m_bStop) {
         m_usedSpace.acquire();          // 等待数据
         if (m_bStop) break;
 
         // 1) 批量从 ring 读，直到读满 CHUNK 或 ring 空
         int got = 0, total = 0;
-        int readCounter=0;
+
+        /* 把 ring 中可读数据尽量一次搬满 256 KiB */
         do {
             got = m_ring->Get(writeBuffer + total, CHUNK - total);
             total += got;
-            readCounter++;
-        } while (/*cpuUsedpercent<70 &&*/ readCounter < 2000 && total < CHUNK);
+        } while (got > 0 && total < CHUNK);
+
         if (total > 0 && m_file.isOpen()) {
             QMutexLocker lock(&m_mutex);
             m_file.write(writeBuffer, total);
-            qDebug()<<" m_file.write bytes===="<<total;
         }
-        // c) 环形空了，搬 overflow
-        if (m_ring->InUseCount()==0) {
-            QMutexLocker dataLock(&recordManager.m_mutexDataArray);
-            if (!recordManager.dataArrayBuffer.isEmpty()) {
-                int toMove = qMin(recordManager.dataArrayBuffer.size(),
-                                  m_ring->FreeCount());
-                m_ring->Add(recordManager.dataArrayBuffer.data(), toMove);
-                m_usedSpace.release();
-                recordManager.dataArrayBuffer.remove(0, toMove);
-            }
-        }
-        // 时间到达后再做 flush
-        loopCounter=0;
+
+        /* 周期 flush（避免频繁磁盘刷新） */
         qint64 now = timer.elapsed();
         if (now - lastFlush >= FLUSH_INTERVAL_MS) {
             QMutexLocker lock(&m_mutex);
             if (m_file.isOpen())
-
                 m_file.flush();
             lastFlush = now;
         }
-
     }
     // 退出前一次性写完所有残余
     CloseFile();
 }
 
-int QFileSaveThead::diskUsedPercent()
+
+int QFileSaveThread::diskUsedPercent()
 {
-    return recordManager.diskUsedPercent;
+    return recordManager->diskUsedPercent;
 }
-int QFileSaveThead::diskRemains()
+int QFileSaveThread::diskRemains()
 {
-    return recordManager.diskAll-recordManager.diskUsed;
+    return recordManager->diskAll-recordManager->diskUsed;
 }
 
-bool QFileSaveThead::sdCardStat()
+bool QFileSaveThread::sdCardStat()
 {
-    return recordManager.isSDCardOK;
+    return recordManager->isSDCardOK;
 }
-void QFileSaveThead::delAllFiles()
+void QFileSaveThread::delAllFiles()
 {
     if (m_file.isOpen())
         m_file.close();
