@@ -61,15 +61,17 @@ QString RecordManager::getRecordData(const SerialDataRev &dataRev)
 void RecordManager::checkTime(QString date,QString time)
 {
     if (!isTimeSet) {
+#ifdef LINUX_MODE
         SetSysTime(date.left(4) + "-" + date.mid(5,2) + "-" + date.right(2),
                    time.left(8));
+        isTimeSet=true;
+#endif
     }
     if (date == revDate && time.left(2) == revTime)
         return;                         // 早退，减小临界区
     revDate = date;
     revTime = time.left(2);
 
-    QMutexLocker locker(&fileMutex);    // RAII 加锁
     if (isSDCardOK && revTime.length() >= 2)
         creatNewFile(revDate, revTime);
 }

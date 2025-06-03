@@ -70,22 +70,22 @@ void QMyCom::reciveComData()
     QByteArray tempData = mySeriCom->readAll();
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        if(revDataCount++<10)
+        //if(revDataCount++<10)
         {
             qDebug()<<"data rev:"<<tempData.toHex();
         }
-       // comDataHandle();
+
     }
     //emit MsgSignals::getInstance()->serialOrigenDataSig(text.toLatin1().data());
 }
 
 void QMyCom::run()
 {
-    //    while(isOpen)
-    //    {
-    //        comDataHandle();
-    //        msleep(10);
-    //    }
+    while(isOpen)
+    {
+        comDataHandle();
+        msleep(1);
+    }
 }
 void QMyCom::comDataHandle()
 {
