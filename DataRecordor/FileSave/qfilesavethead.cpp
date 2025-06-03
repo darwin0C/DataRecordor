@@ -86,11 +86,13 @@ void QFileSaveThread::onRevCpuinfo(double usedPer)
 
 void QFileSaveThread::revSerialData(SerialDataRev serialData)
 {
+    static int recvCnt = 0;
+    qDebug() << "[Serial] total frames:" << recvCnt++;
     if (m_bStop) return;
 
-    static int recvCnt = 0;
-    if (++recvCnt % 1000 == 0)
-        qDebug() << "[Serial] total frames:" << recvCnt;
+    //static int recvCnt = 0;
+    //    if (++recvCnt % 1000 == 0)
+    //        qDebug() << "[Serial] total frames:" << recvCnt;
 
     QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
     data.append('\n');

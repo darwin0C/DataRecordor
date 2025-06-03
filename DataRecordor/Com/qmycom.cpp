@@ -13,8 +13,8 @@ QMyCom::QMyCom(QObject *parent):
     connect(mySeriCom, &QSerialPort::readyRead, this, &QMyCom::reciveComData);
     isOpen=false;
     myComRxBuff=new QTCQueue(10240);
-    connect(&timer,&QTimer::timeout,this,[this](){revDataCount=0;});
-    timer.start(1000*5);
+    //    connect(&timer,&QTimer::timeout,this,[this](){revDataCount=0;});
+    //    timer.start(1000*5);
 }
 QMyCom::~QMyCom()
 {
@@ -74,7 +74,7 @@ void QMyCom::reciveComData()
         {
             qDebug()<<"data rev:"<<tempData.toHex();
         }
-        comDataHandle();
+       // comDataHandle();
     }
     //emit MsgSignals::getInstance()->serialOrigenDataSig(text.toLatin1().data());
 }
@@ -110,10 +110,11 @@ void QMyCom::comDataHandle()
     // 帧头 / 第二字节常量
     const char FRAME_HEAD   = char(0xC1);
     const char FRAME_SECOND = char(0x0A);
-
+    //qDebug() << "myComRxBuff->Peek"<<buf.toHex();
     while (true) {
         // 2.1 保证从当前 pos 开始到 buf 末尾至少有 MinPacketLength 字节，否则不够一帧，退出循环
         if (pos + MinPacketLength > buf.size()) {
+            qDebug() << "pos + MinPacketLength > buf.size()";
             break;
         }
 
@@ -121,16 +122,20 @@ void QMyCom::comDataHandle()
         int idx = buf.indexOf(FRAME_HEAD, pos);
         if (idx < 0) {
             // 后面没有 0xC1，退出
+            qDebug() << "no 0xC1";
             break;
         }
 
         // 2.3 如果 idx 后面连第二字节都读不到，说明数据不够，留给下一轮续包
         if (idx + 1 >= buf.size()) {
+            qDebug() << "idx + 1 >= buf.size()";
             break;
         }
+
         // 2.4 第二字节不对，则说明这不是合法帧头，跳过这一个位置，继续找
         if (buf.at(idx + 1) != FRAME_SECOND) {
             pos = idx + 1;
+            qDebug() << "buf.at(idx + 1) != FRAME_SECOND";
             continue;
         }
 
@@ -138,6 +143,7 @@ void QMyCom::comDataHandle()
         //      还要再确认是否能读到完整 MinPacketLength 字节：
         if (idx + MinPacketLength > buf.size()) {
             // 从 idx 开始不够一个完整帧，等下次再续包
+            qDebug() << "idx + MinPacketLength > buf.size()";
             break;
         }
 
@@ -145,8 +151,8 @@ void QMyCom::comDataHandle()
         uchar* frame = reinterpret_cast< uchar*>(buf.data() + idx);
         if (!andCheck(frame, MinPacketLength)) {
             // 校验失败，跳过这个 idx，再往后继续搜索
-            qDebug() << "校验失败，跳过 idx =" << idx
-                     << "，数据：" << buf.mid(idx, MinPacketLength).toHex();
+            qDebug() << "check fail，jump idx =" << idx
+                     << "，data：" << buf.mid(idx, MinPacketLength).toHex();
             pos = idx + 1;
             continue;
         }
@@ -160,7 +166,7 @@ void QMyCom::comDataHandle()
 
         emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
         emit MsgSignals::getInstance()->canDataSig(CanDataRev);
-
+        qDebug() << "emit MsgSignals::getInstance()->serialDataSig";
         // 2.8 消费这一帧：把 pos 移到 idx + MinPacketLength，继续循环
         pos = idx + MinPacketLength;
     }

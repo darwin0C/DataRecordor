@@ -184,7 +184,7 @@ void MainWindow::startRecord()
         mySaveDataThread=new QFileSaveThread(this);
 
         qRegisterMetaType<SerialDataRev>("SerialDataRev");//自定义类型需要先注册
-        //connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThead::revSerialData);
+        connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThread::revSerialData);
         connect(MsgSignals::getInstance(),&MsgSignals::sendCpuinfo,mySaveDataThread,&QFileSaveThread::onRevCpuinfo);
 
         connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThread::delAllFiles);

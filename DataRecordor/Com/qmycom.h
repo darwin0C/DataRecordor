@@ -31,7 +31,7 @@ class QMyCom : public QThread
 {
     Q_OBJECT
     int revDataCount=0;
-    QTimer timer;
+    //QTimer timer;
 public:
     explicit QMyCom(QObject *parent = 0);
     ~QMyCom();
