@@ -70,147 +70,142 @@ void QMyCom::reciveComData()
     QByteArray tempData = mySeriCom->readAll();
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        //if(revDataCount++<10)
-        {
-            qDebug()<<"data rev:"<<tempData.toHex();
-        }
-
+        comDataHandle();
     }
-    //emit MsgSignals::getInstance()->serialOrigenDataSig(text.toLatin1().data());
 }
 
 void QMyCom::run()
 {
-    while(isOpen)
-    {
-        comDataHandle();
-        msleep(1);
-    }
+    //    while(isOpen)
+    //    {
+    //        comDataHandle();
+    //        msleep(1);
+    //    }
 }
-void QMyCom::comDataHandle()
-{
-    // -----------------------------
-    // 1. 先把所有可读数据一次性 peek 到本地 QByteArray
-    // -----------------------------
-    int available = myComRxBuff->InUseCount();
-    // 定义“最小整帧长度”，与 SerialDataRev 等宽
-    const int MinPacketLength = sizeof(SerialDataRev);
-    if (available < MinPacketLength) {
-        // 缓冲区中连一个完整帧都不足，直接返回
-        return;
-    }
-
-    QByteArray buf(available, Qt::Uninitialized);
-    myComRxBuff->Peek(buf.data(), available);
-
-    // -----------------------------
-    // 2. 在 buf 中循环查找并处理“帧”
-    // -----------------------------
-    int pos = 0;
-    // 帧头 / 第二字节常量
-    const char FRAME_HEAD   = char(0xC1);
-    const char FRAME_SECOND = char(0x0A);
-    //qDebug() << "myComRxBuff->Peek"<<buf.toHex();
-    while (true) {
-        // 2.1 保证从当前 pos 开始到 buf 末尾至少有 MinPacketLength 字节，否则不够一帧，退出循环
-        if (pos + MinPacketLength > buf.size()) {
-            qDebug() << "pos + MinPacketLength > buf.size()";
-            break;
-        }
-
-        // 2.2 从 pos 起搜索下一个可能的帧头
-        int idx = buf.indexOf(FRAME_HEAD, pos);
-        if (idx < 0) {
-            // 后面没有 0xC1，退出
-            qDebug() << "no 0xC1";
-            break;
-        }
-
-        // 2.3 如果 idx 后面连第二字节都读不到，说明数据不够，留给下一轮续包
-        if (idx + 1 >= buf.size()) {
-            qDebug() << "idx + 1 >= buf.size()";
-            break;
-        }
-
-        // 2.4 第二字节不对，则说明这不是合法帧头，跳过这一个位置，继续找
-        if (buf.at(idx + 1) != FRAME_SECOND) {
-            pos = idx + 1;
-            qDebug() << "buf.at(idx + 1) != FRAME_SECOND";
-            continue;
-        }
-
-        // 2.5 到这里说明：buf[idx] == 0xC1，buf[idx+1] == 0x0A，有可能是一帧。
-        //      还要再确认是否能读到完整 MinPacketLength 字节：
-        if (idx + MinPacketLength > buf.size()) {
-            // 从 idx 开始不够一个完整帧，等下次再续包
-            qDebug() << "idx + MinPacketLength > buf.size()";
-            break;
-        }
-
-        // 2.6 拿到这一帧的数据指针，开始校验
-        uchar* frame = reinterpret_cast< uchar*>(buf.data() + idx);
-        if (!andCheck(frame, MinPacketLength)) {
-            // 校验失败，跳过这个 idx，再往后继续搜索
-            qDebug() << "check fail，jump idx =" << idx
-                     << "，data：" << buf.mid(idx, MinPacketLength).toHex();
-            pos = idx + 1;
-            continue;
-        }
-
-        // 2.7 校验通过，把这一帧 memcpy 出来，然后发信号
-        SerialDataRev stFromOPCData;
-        memcpy(&stFromOPCData, frame, MinPacketLength);
-
-        CanData CanDataRev;
-        memcpy(&CanDataRev, &stFromOPCData.candata, sizeof(CanData));
-
-        emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
-        emit MsgSignals::getInstance()->canDataSig(CanDataRev);
-        qDebug() << "emit MsgSignals::getInstance()->serialDataSig";
-        // 2.8 消费这一帧：把 pos 移到 idx + MinPacketLength，继续循环
-        pos = idx + MinPacketLength;
-    }
-
-    // -----------------------------
-    // 3. 从底层缓冲区一次性移除已处理的 pos 个字节
-    // -----------------------------
-    if (pos > 0) {
-        myComRxBuff->MoveReadP(pos);
-    }
-}
-
 //void QMyCom::comDataHandle()
 //{
-//    unsigned char tembuff[64]={0};
+//    // -----------------------------
+//    // 1. 先把所有可读数据一次性 peek 到本地 QByteArray
+//    // -----------------------------
+//    int available = myComRxBuff->InUseCount();
+//    // 定义“最小整帧长度”，与 SerialDataRev 等宽
+//    const int MinPacketLength = sizeof(SerialDataRev);
+//    if (available < MinPacketLength) {
+//        // 缓冲区中连一个完整帧都不足，直接返回
+//        return;
+//    }
 
-//    while(myComRxBuff->InUseCount()>=MinPacketLength )
-//    {
+//    QByteArray buf(available, Qt::Uninitialized);
+//    myComRxBuff->Peek(buf.data(), available);
 
-//        myComRxBuff->Peek(tembuff,MinPacketLength);
-//        unsigned char head=tembuff[0];
-//        unsigned char flag=tembuff[1];
-//        if(head!=0XC1 || flag!=0x0A)
-//        {
-//            qDebug() << "head or flag error"<<head<<flag;
-//            myComRxBuff->MoveReadP(1);
+//    // -----------------------------
+//    // 2. 在 buf 中循环查找并处理“帧”
+//    // -----------------------------
+//    int pos = 0;
+//    // 帧头 / 第二字节常量
+//    const char FRAME_HEAD   = char(0xC1);
+//    const char FRAME_SECOND = char(0x0A);
+//    //qDebug() << "myComRxBuff->Peek"<<buf.toHex();
+//    while (true) {
+//        // 2.1 保证从当前 pos 开始到 buf 末尾至少有 MinPacketLength 字节，否则不够一帧，退出循环
+//        if (pos + MinPacketLength > buf.size()) {
+//            // qDebug() << "pos + MinPacketLength > buf.size()";
+//            break;
+//        }
+
+//        // 2.2 从 pos 起搜索下一个可能的帧头
+//        int idx = buf.indexOf(FRAME_HEAD, pos);
+//        if (idx < 0) {
+//            // 后面没有 0xC1，退出
+//            //qDebug() << "no 0xC1";
+//            break;
+//        }
+
+//        // 2.3 如果 idx 后面连第二字节都读不到，说明数据不够，留给下一轮续包
+//        if (idx + 1 >= buf.size()) {
+//            //qDebug() << "idx + 1 >= buf.size()";
+//            break;
+//        }
+
+//        // 2.4 第二字节不对，则说明这不是合法帧头，跳过这一个位置，继续找
+//        if (buf.at(idx + 1) != FRAME_SECOND) {
+//            pos = idx + 1;
+//            qDebug() << "error,buf.at(idx + 1) != FRAME_SECOND"<<buf.at(idx + 1);
 //            continue;
 //        }
-//        if (andCheck(tembuff,MinPacketLength)) //判断收到的数据是否正确
-//        {
-//            SerialDataRev stFromOPCData;
-//            CanData CanDataRev;
-//            myComRxBuff->Get(&stFromOPCData,MinPacketLength);
-//            memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
-//            //qDebug() << "emit serialDataSig==========================";
-//            emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
-//            emit MsgSignals::getInstance()->canDataSig(CanDataRev);
-//        }else
-//        {
-//            qDebug() << "check error=========================="<<QByteArray((char *)tembuff,MinPacketLength).toHex();
-//            myComRxBuff->MoveReadP(1);
+
+//        // 2.5 到这里说明：buf[idx] == 0xC1，buf[idx+1] == 0x0A，有可能是一帧。
+//        //      还要再确认是否能读到完整 MinPacketLength 字节：
+//        if (idx + MinPacketLength > buf.size()) {
+//            // 从 idx 开始不够一个完整帧，等下次再续包
+//            //qDebug() << "idx + MinPacketLength > buf.size()";
+//            break;
 //        }
+
+//        // 2.6 拿到这一帧的数据指针，开始校验
+//        uchar* frame = reinterpret_cast< uchar*>(buf.data() + idx);
+//        if (!andCheck(frame, MinPacketLength)) {
+//            // 校验失败，跳过这个 idx，再往后继续搜索
+//            qDebug() << "error ,check fail，jump idx =" << idx
+//                     << "，data：" << buf.mid(idx, MinPacketLength).toHex();
+//            pos = idx + 1;
+//            continue;
+//        }
+
+//        // 2.7 校验通过，把这一帧 memcpy 出来，然后发信号
+//        SerialDataRev stFromOPCData;
+//        memcpy(&stFromOPCData, frame, MinPacketLength);
+
+//        CanData CanDataRev;
+//        memcpy(&CanDataRev, &stFromOPCData.candata, sizeof(CanData));
+
+//        emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
+//        emit MsgSignals::getInstance()->canDataSig(CanDataRev);
+//        //qDebug() << "emit MsgSignals::getInstance()->serialDataSig";
+//        // 2.8 消费这一帧：把 pos 移到 idx + MinPacketLength，继续循环
+//        pos = idx + MinPacketLength;
+//    }
+
+//    // -----------------------------
+//    // 3. 从底层缓冲区一次性移除已处理的 pos 个字节
+//    // -----------------------------
+//    if (pos > 0) {
+//        myComRxBuff->MoveReadP(pos);
 //    }
 //}
+
+void QMyCom::comDataHandle()
+{
+    unsigned char tembuff[64]={0};
+    const int MinPacketLength = sizeof(SerialDataRev);
+    while(myComRxBuff->InUseCount()>=MinPacketLength )
+    {
+
+        myComRxBuff->Peek(tembuff,MinPacketLength);
+        unsigned char head=tembuff[0];
+        unsigned char flag=tembuff[1];
+        if(head!=0XC1 || flag!=0x0A)
+        {
+            qDebug() << "head or flag error"<<head<<flag;
+            myComRxBuff->MoveReadP(1);
+            continue;
+        }
+        if (andCheck(tembuff,MinPacketLength)) //判断收到的数据是否正确
+        {
+            SerialDataRev stFromOPCData;
+            CanData CanDataRev;
+            myComRxBuff->Get(&stFromOPCData,MinPacketLength);
+            memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
+            //qDebug() << "emit serialDataSig==========================";
+            emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
+            emit MsgSignals::getInstance()->canDataSig(CanDataRev);
+        }else
+        {
+            qDebug() << "check error=========================="<<QByteArray((char *)tembuff,MinPacketLength).toHex();
+            myComRxBuff->MoveReadP(1);
+        }
+    }
+}
 
 bool QMyCom::andCheck(unsigned char *pBuf, unsigned int FrameSize) {
     if (FrameSize == 0) {

@@ -23,6 +23,14 @@ QFileSaveThread::QFileSaveThread(QObject *parent)
     // 每100ms 将大缓存数据搬入小缓冲
     m_ring=new QTCQueue(m_nCacheSize);
     writeBuffer=new char[CHUNK];
+    /* ---------- 新增定时器：定期 flush ---------- */
+    m_flushTimer = new QTimer(this);                     // 由 QThread 对象托管
+    m_flushTimer->setInterval(10 * 1000);               // 10 s 一次
+    connect(m_flushTimer, &QTimer::timeout,
+            this,          &QFileSaveThread::onFlushTimeout,
+            Qt::QueuedConnection);                      // 保证跨线程安全
+    m_flushTimer->start();
+    /* ------------------------------------------------*/
 }
 
 QFileSaveThread::~QFileSaveThread()
@@ -33,7 +41,16 @@ QFileSaveThread::~QFileSaveThread()
     delete[] writeBuffer;
     delete   m_ring;
 }
-
+/* ----------------- 定时 flush 槽 ----------------- */
+void QFileSaveThread::onFlushTimeout()
+{
+    QMutexLocker lock(&m_mutex);
+    if (m_file.isOpen()) {
+        m_file.flush();                     // 把文件缓冲写到磁盘
+        // 可选：这里也可以打印日志
+        // qDebug() << "[FileSave] flush by timer";
+    }
+}
 void QFileSaveThread::startRecord()
 {
     m_bStop = false;
@@ -86,13 +103,11 @@ void QFileSaveThread::onRevCpuinfo(double usedPer)
 
 void QFileSaveThread::revSerialData(SerialDataRev serialData)
 {
-    static int recvCnt = 0;
-    qDebug() << "[Serial] total frames:" << recvCnt++;
     if (m_bStop) return;
 
-    //static int recvCnt = 0;
-    //    if (++recvCnt % 1000 == 0)
-    //        qDebug() << "[Serial] total frames:" << recvCnt;
+    static int recvCnt = 0;
+    if (++recvCnt % 1000 == 0)
+        qDebug() << "[Serial] total frames:" << recvCnt;
 
     QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
     data.append('\n');

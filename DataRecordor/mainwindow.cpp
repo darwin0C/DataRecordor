@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(mp_TCPServer, SIGNAL(newConnection()), this, SLOT(ServerNewConnection()));
     connect(MsgSignals::getInstance(),&MsgSignals::sendLEDStatSig,this,&MainWindow::changeLEDStat);
     //Test();
-    startcpuMonitor();
+    //startcpuMonitor();
 }
 void MainWindow::startcpuMonitor()
 {

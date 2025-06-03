@@ -48,6 +48,7 @@ private:
     //QByteArray m_overflow;
     double cpuUsedpercent=0;
     void pushToRing(char *src, int len);
+    QTimer *m_flushTimer;
 public:
     bool CreatFile(QString qsFilePath); //打开文件
     int GetCacheSize() const;
@@ -71,6 +72,7 @@ private slots:
 
     void onCreatNewFile(QString fileName);
 
+    void onFlushTimeout();
 };
 
 #endif // QFILESAVETHEAD_H
