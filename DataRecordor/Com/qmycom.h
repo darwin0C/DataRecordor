@@ -31,9 +31,12 @@ class QMyCom : public QThread
 {
     Q_OBJECT
     int revDataCount=0;
-    //QTimer timer;
+    QTimer timer;
+    int comIndex=0;
+    bool comReady=false;
+    int recvCnt = 0;
 public:
-    explicit QMyCom(QObject *parent = 0);
+    explicit QMyCom(int index,QObject *parent = 0);
     ~QMyCom();
     QSerialPort *mySeriCom;
     bool    isOpen;
@@ -54,6 +57,8 @@ public slots:
     void sendCanMegSigHandle(QByteArray array);
     void reciveComData();
 
+private slots:
+    void onTimeHandle();
 };
 
 #endif // QMYCOM_H

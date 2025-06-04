@@ -28,7 +28,7 @@ class ComManager : public QObject
     int netSocketPort;//
     QString netSocketIP;//
     TcpClient *photoTransObj=NULL;
-    QMyCom *startSerial(QString portNum);
+    QMyCom *startSerial(int index,QString portNum);
 public:
     explicit ComManager(QObject *parent = nullptr);
     ~ComManager();

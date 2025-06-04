@@ -15,7 +15,9 @@ QFileSaveThread::QFileSaveThread(QObject *parent)
     //    m_pBuffer = new byte[m_nCacheSize];  // 预分配 1MB 缓冲
     //    m_nWritePos = 0;
     m_bOpen = false;
-
+    com1Ready = false;
+    com2Ready = false;
+    com3Ready = false;
     qRegisterMetaType<CanDataBody>("CanDataBody");//自定义类型需要先注册
     recordManager=new RecordManager();
     connect(recordManager,&RecordManager::creatFileSig,this,&QFileSaveThread::onCreatNewFile);
@@ -84,6 +86,7 @@ void QFileSaveThread::pushToRing(char *src, int len)
         m_ring->Add(src + offset, chunk);
         offset += chunk;
         /* 每写入 chunk 字节，给 run() 放行 chunk 次 */
+        //if(com1Ready && com2Ready &&com3Ready)
         m_usedSpace.release(chunk);
     }
 }
@@ -100,7 +103,21 @@ void QFileSaveThread::onRevCpuinfo(double usedPer)
     if(cpuUsedpercent>50)
         qDebug()<<"CPU USED Percent :"<<cpuUsedpercent;
 }
-
+void QFileSaveThread::comDataReady(int comIdex)
+{
+    if(comIdex==0)
+    {
+        com1Ready=true;
+    }
+    else if(comIdex==1)
+    {
+        com2Ready=true;
+    }
+    else if(comIdex==2)
+    {
+        com3Ready=true;
+    }
+}
 void QFileSaveThread::revSerialData(SerialDataRev serialData)
 {
     if (m_bStop) return;
@@ -109,9 +126,9 @@ void QFileSaveThread::revSerialData(SerialDataRev serialData)
     if (++recvCnt % 1000 == 0)
         qDebug() << "[Serial] total frames:" << recvCnt;
 
-    QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
-    data.append('\n');
-    pushToRing(data.data(), data.size());
+//    QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
+//    data.append('\n');
+//    pushToRing(data.data(), data.size());
 
 }
 

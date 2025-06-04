@@ -41,6 +41,7 @@ public:
     QString m_qsFilePath;
 
 private:
+    bool com1Ready,com2Ready,com3Ready;
     RecordManager *recordManager=nullptr ;
     char *writeBuffer;
     // 大缓存区
@@ -66,8 +67,11 @@ public slots:
     void revSerialData(SerialDataRev serialData);
     void delAllFiles();
     void revOrigenDataSig(QByteArray data);
+    void comDataReady(int comIdex);
 protected:
     virtual void run() override;
+
+
 private slots:
 
     void onCreatNewFile(QString fileName);

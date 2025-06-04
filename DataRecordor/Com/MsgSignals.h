@@ -29,6 +29,7 @@ signals:
     void sendCheckDiskSig();
     void sendCpuinfo(double);
     void startAutoSend(bool);
+    void comDataReady(int);
 private:
     // 构造函数私有化，确保外部无法直接创建对象
     MsgSignals() {}

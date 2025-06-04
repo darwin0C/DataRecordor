@@ -5,16 +5,16 @@
 #include <QDateTime>
 //const int MinPacketLength = 26;
 
-QMyCom::QMyCom(QObject *parent):
+QMyCom::QMyCom(int index,QObject *parent):
     QThread(parent)
 {
-
+    comIndex=index;
     mySeriCom=new QSerialPort();
     connect(mySeriCom, &QSerialPort::readyRead, this, &QMyCom::reciveComData);
     isOpen=false;
-    myComRxBuff=new QTCQueue(10240);
-    //    connect(&timer,&QTimer::timeout,this,[this](){revDataCount=0;});
-    //    timer.start(1000*5);
+    myComRxBuff=new QTCQueue(10*1024*1024);
+    connect(&timer,&QTimer::timeout,this,&QMyCom::onTimeHandle);
+    timer.start(1000);
 }
 QMyCom::~QMyCom()
 {
@@ -47,6 +47,17 @@ bool QMyCom::initComInterface(const QString &port, int baud)
 
     return isOpen;
 }
+void QMyCom::onTimeHandle()
+{
+    revDataCount++;
+    if(revDataCount>10)
+    {
+        comReady=true;
+        qDebug()<<"comReady"<<comIndex;
+        timer.stop();
+        //emit MsgSignals::getInstance()->comDataReady(comIndex);
+    }
+}
 
 //关闭
 void QMyCom::closeComInterface()
@@ -68,19 +79,26 @@ bool QMyCom::isComInterfaceOpen()
 void QMyCom::reciveComData()
 {
     QByteArray tempData = mySeriCom->readAll();
+    //qDebug()<<"com rev: "<<tempData.toHex();
+
+    if (++recvCnt % 1000 == 0)
+        qDebug() << "[Serial"<<comIndex<<"] total frames:" << recvCnt;
+
+    revDataCount=0;
     if (!tempData.isEmpty()) {
         myComRxBuff->Add(tempData.data(), tempData.size());
-        comDataHandle();
+        //comDataHandle();
     }
 }
 
 void QMyCom::run()
 {
-    //    while(isOpen)
-    //    {
-    //        comDataHandle();
-    //        msleep(1);
-    //    }
+    while(isOpen)
+    {
+        //if(comReady)
+        comDataHandle();
+        msleep(1);
+    }
 }
 //void QMyCom::comDataHandle()
 //{

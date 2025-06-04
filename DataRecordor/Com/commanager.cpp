@@ -21,9 +21,9 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
         try
         {
 #ifdef LINUX_MODE
-            serialCom1= startSerial(Seriallist[1]);
-            serialCom2= startSerial(Seriallist[2]);
-            serialCom3= startSerial(Seriallist[3]);
+            serialCom1= startSerial(0,Seriallist[1]);
+            serialCom2= startSerial(1,Seriallist[2]);
+            serialCom3= startSerial(2,Seriallist[3]);
 #else
             serialCom1= startSerial(Seriallist[1]);
             serialCom2= startSerial(Seriallist[3]);
@@ -69,9 +69,9 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
 
 }
 
-QMyCom *ComManager::startSerial(QString portNum)
+QMyCom *ComManager::startSerial(int index,QString portNum)
 {
-    QMyCom *serialCom=new QMyCom();
+    QMyCom *serialCom=new QMyCom(index);
     connect(this,&ComManager::sendCanMegSig,serialCom,&QMyCom::sendCanMegSigHandle);
     if(serialCom->initComInterface(portNum,921600))
     {
