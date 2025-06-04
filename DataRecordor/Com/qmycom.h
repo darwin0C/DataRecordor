@@ -31,7 +31,7 @@ class QMyCom : public QObject
 {
     Q_OBJECT
     int revDataCount=0;
-    QTimer timer;
+    QTimer *timer;
     int comIndex=0;
     bool comReady=false;
     int recvCnt = 0;

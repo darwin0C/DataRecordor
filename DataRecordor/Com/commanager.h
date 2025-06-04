@@ -54,7 +54,9 @@ public:
 public slots:
     void senSerialDataByCom(QByteArray array, int comIndex);
 signals:
-    void sendCanMegSig(QByteArray);
+    void sendCanMegSig0(QByteArray);
+    void sendCanMegSig1(QByteArray);
+    void sendCanMegSig2(QByteArray);
     void jsContrlSig();
 };
 

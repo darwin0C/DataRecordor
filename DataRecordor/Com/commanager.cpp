@@ -81,29 +81,32 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
 //}
 QMyCom* ComManager::startSerial(int index, QString portName)
 {
-    // 1. 创建 worker & 线程
-    auto *worker = new QMyCom(index, nullptr);
+    auto *worker = new QMyCom(index);
     auto *th     = new QThread(this);
+    worker->moveToThread(th);
+    /* 1) 线程启动后，先把 worker 挂进去，再让 worker 自己 new 串口 */
+    connect(th, &QThread::started,worker,[worker, portName]
+    {worker->initComInterface(portName, 921600);}
+    /*,Qt::DirectConnection*/);  //
 
-    // 2. 线程结束后安全删除
     connect(th, &QThread::finished, worker, &QObject::deleteLater);
 
-    // 3. 把 worker 挂到线程
-    worker->moveToThread(th);
-
-    // 4. 把发送信号接到 worker
-    connect(this,   &ComManager::sendCanMegSig,
-            worker, &QMyCom::sendCanMegSigHandle,
-            Qt::QueuedConnection);
-
-    // 5. 线程启动时再打开串口（避免跨线程直接操作）
-    connect(th, &QThread::started,
-            worker,
-            [worker, portName]() { worker->initComInterface(portName, 921600); },
-    Qt::QueuedConnection);
+    /* 写串口信号：QueuedConnection 保证在子线程执行 */
+    if(index==0)
+        connect(this, &ComManager::sendCanMegSig0,
+                worker,&QMyCom::sendCanMegSigHandle,
+                Qt::QueuedConnection);
+    else if(index==1)
+        connect(this, &ComManager::sendCanMegSig1,
+                worker,&QMyCom::sendCanMegSigHandle,
+                Qt::QueuedConnection);
+    else if(index==2)
+        connect(this, &ComManager::sendCanMegSig2,
+                worker,&QMyCom::sendCanMegSigHandle,
+                Qt::QueuedConnection);
 
     th->start();
-    return worker;   // 由 ComManager 保持指针即可
+    return worker;
 }
 
 ComManager::~ComManager()
@@ -216,24 +219,26 @@ void ComManager::senSerialDataByCom(QByteArray array,int comIndex)
     if(comIndex==0)
     {
         if(serialCom1 && serialCom1->m_isOpen)
-            serialCom1->sendCanMegSigHandle(array);
-
+            //serialCom1->sendCanMegSigHandle(array);
+            emit sendCanMegSig0(array);
     }
     else if(comIndex==1)
     {
         if(serialCom2 && serialCom2->m_isOpen)
-            serialCom2->sendCanMegSigHandle(array);
+            //serialCom2->sendCanMegSigHandle(array);
+            emit sendCanMegSig1(array);
     }
     else if(comIndex==2)
     {
         if(serialCom3 && serialCom3->m_isOpen)
-            serialCom3->sendCanMegSigHandle(array);
+            //serialCom3->sendCanMegSigHandle(array);
+            emit sendCanMegSig2(array);
     }
 }
 
 int ComManager::sendSerialData(QByteArray array)
 {
-    emit sendCanMegSig(array);
+    emit sendCanMegSig0(array);
     return 0;
 }
 

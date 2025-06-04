@@ -10,9 +10,14 @@
 #include <QTimer>
 #include "data.h"
 #include "qtcqueue.h"
+#include <atomic>
+
 class QFileSaveThread : public QThread
 {
     Q_OBJECT
+    std::atomic<quint64> prodBytes  {0};   // 总生产字节
+    std::atomic<quint64> consBytes  {0};   // 总消费字节
+    std::atomic<int>     ringUsage  {0};   // 上一次打印时 ring 已用
 public:
     explicit QFileSaveThread(QObject *parent = NULL);
     ~QFileSaveThread();
@@ -41,7 +46,6 @@ public:
     QString m_qsFilePath;
 
 private:
-    bool com1Ready,com2Ready,com3Ready;
     RecordManager *recordManager=nullptr ;
     char *writeBuffer;
     // 大缓存区
@@ -66,8 +70,7 @@ public slots:
     void revCANData(CanDataBody canData);
     void revSerialData(SerialDataRev serialData);
     void delAllFiles();
-    void revOrigenDataSig(QByteArray data);
-    void comDataReady(int comIdex);
+
 protected:
     virtual void run() override;
 

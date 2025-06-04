@@ -225,15 +225,15 @@ void RecordManager::newfile(QString date,QString time)
     {
         dir.mkpath(fileDir);
     }
-    QString dirPath=fileDir+"/ebd_can_"+time.left(2);
+    // QString dirPath=fileDir+"/ebd_can_"+time.left(2);
     //qDebug()<<"<<<<<<<<<fileName="<<dirPath;
 
-    static int index=0;
-    QString base = dirPath + "/ebd_can_" + time.left(2);
+    //static int index=0;
+    QString base = fileDir + "/ebd_can_" + time.left(2);
     QFile candidate(base + ".txt");
-    while (candidate.exists()) {
-        candidate.setFileName(base + '_' + QString::number(++index) + ".txt");
-    }
+    //    while (candidate.exists()) {
+    //        candidate.setFileName(base + '_' + QString::number(++index) + ".txt");
+    //    }
     gCurrentfileName = candidate.fileName();
 
     emit creatFileSig(gCurrentfileName);

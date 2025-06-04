@@ -4,6 +4,7 @@
 #include <QElapsedTimer>
 #include <QTimer>
 #include "MsgSignals.h"
+#include <unistd.h>
 
 const int CHUNK = 128*1024;
 QFileSaveThread::QFileSaveThread(QObject *parent)
@@ -11,13 +12,9 @@ QFileSaveThread::QFileSaveThread(QObject *parent)
     , m_usedSpace(0)
 {
     m_bStop = false;
-    m_nCacheSize = 50 * 1024 * 1024; //1MB
-    //    m_pBuffer = new byte[m_nCacheSize];  // 预分配 1MB 缓冲
-    //    m_nWritePos = 0;
+    m_nCacheSize = 1 * 1024 * 1024; //1MB
+
     m_bOpen = false;
-    com1Ready = false;
-    com2Ready = false;
-    com3Ready = false;
     qRegisterMetaType<CanDataBody>("CanDataBody");//自定义类型需要先注册
     recordManager=new RecordManager();
     connect(recordManager,&RecordManager::creatFileSig,this,&QFileSaveThread::onCreatNewFile);
@@ -27,7 +24,7 @@ QFileSaveThread::QFileSaveThread(QObject *parent)
     writeBuffer=new char[CHUNK];
     /* ---------- 新增定时器：定期 flush ---------- */
     m_flushTimer = new QTimer(this);                     // 由 QThread 对象托管
-    m_flushTimer->setInterval(10 * 1000);               // 10 s 一次
+    m_flushTimer->setInterval(1000);               // 10 s 一次
     connect(m_flushTimer, &QTimer::timeout,
             this,          &QFileSaveThread::onFlushTimeout,
             Qt::QueuedConnection);                      // 保证跨线程安全
@@ -46,12 +43,34 @@ QFileSaveThread::~QFileSaveThread()
 /* ----------------- 定时 flush 槽 ----------------- */
 void QFileSaveThread::onFlushTimeout()
 {
-    QMutexLocker lock(&m_mutex);
-    if (m_file.isOpen()) {
-        m_file.flush();                     // 把文件缓冲写到磁盘
-        // 可选：这里也可以打印日志
-        // qDebug() << "[FileSave] flush by timer";
+    static int loopcount=0;
+    if(loopcount%10==0)
+    {
+        QMutexLocker lock(&m_mutex);
+        if (m_file.isOpen()) {
+            m_file.flush();                     // 把文件缓冲写到磁盘
+            // 可选：这里也可以打印日志
+            // qDebug() << "[FileSave] flush by timer";
+            ::fdatasync(m_file.handle());       // 真正提交到介质
+        }
     }
+    static quint64 lastProd = 0, lastCons = 0;
+
+    quint64 p = prodBytes.load();
+    quint64 c = consBytes.load();
+
+    int ringNow = m_ring->InUseCount();
+    int deltaP  = int(p - lastProd);
+    int deltaC  = int(c - lastCons);
+
+    lastProd = p;
+    lastCons = c;
+
+    qDebug().nospace()
+            << "[STAT] prod " << deltaP / 1024 << " KiB/s  "
+            << "cons "       << deltaC / 1024 << " KiB/s  "
+            << "ring "       << ringNow / 1024 << " / " << m_nCacheSize / 1024
+            << " KiB  (used " << (ringNow * 100 / m_nCacheSize) << "%)";
 }
 void QFileSaveThread::startRecord()
 {
@@ -84,40 +103,20 @@ void QFileSaveThread::pushToRing(char *src, int len)
         }
         int chunk = qMin(len - offset, freeBytes);
         m_ring->Add(src + offset, chunk);
+        prodBytes += chunk; // ← 新增
         offset += chunk;
         /* 每写入 chunk 字节，给 run() 放行 chunk 次 */
-        //if(com1Ready && com2Ready &&com3Ready)
         m_usedSpace.release(chunk);
     }
 }
-void QFileSaveThread::revOrigenDataSig(QByteArray data)
-{
-    if (m_bStop) return;
-    data.append('\r');
-    data.append('\n');
-    pushToRing(data.data(), data.size());
-}
+
 void QFileSaveThread::onRevCpuinfo(double usedPer)
 {
     cpuUsedpercent=usedPer;
     if(cpuUsedpercent>50)
         qDebug()<<"CPU USED Percent :"<<cpuUsedpercent;
 }
-void QFileSaveThread::comDataReady(int comIdex)
-{
-    if(comIdex==0)
-    {
-        com1Ready=true;
-    }
-    else if(comIdex==1)
-    {
-        com2Ready=true;
-    }
-    else if(comIdex==2)
-    {
-        com3Ready=true;
-    }
-}
+
 void QFileSaveThread::revSerialData(SerialDataRev serialData)
 {
     if (m_bStop) return;
@@ -126,9 +125,9 @@ void QFileSaveThread::revSerialData(SerialDataRev serialData)
     if (++recvCnt % 1000 == 0)
         qDebug() << "[Serial] total frames:" << recvCnt;
 
-    //    QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
-    //    data.append('\n');
-    //    pushToRing(data.data(), data.size());
+    QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
+    data.append('\n');
+    pushToRing(data.data(), data.size());
 
 }
 
@@ -196,10 +195,11 @@ bool QFileSaveThread::CreatFile(QString qsFilePath)
 
 void QFileSaveThread::run()
 {
-    //    const qint64 FLUSH_INTERVAL_MS = 10 * 1000;  // 10秒
-    //    QElapsedTimer timer;
-    //    timer.start();
-    //    qint64 lastFlush = 0;
+    const qint64 FLUSH_INTERVAL_MS = 10 * 1000;  // 10秒
+    QElapsedTimer timer;
+    timer.start();
+    qint64 lastFlush = 0;
+    int bytesWritten=0;
     while (!m_bStop) {
         m_usedSpace.acquire();          // 等待数据
         if (m_bStop) break;
@@ -216,6 +216,12 @@ void QFileSaveThread::run()
         if (total > 0 && m_file.isOpen()) {
             QMutexLocker lock(&m_mutex);
             m_file.write(writeBuffer, total);
+            consBytes += total;// ← 新增
+            bytesWritten += total;
+            if (bytesWritten >=  2*1024 * 1024) {  // 每 4 MB 强刷一次
+                ::fdatasync(m_file.handle());       // 真正提交到介质
+                bytesWritten = 0;
+            }
         }
 
         //        /* 周期 flush（避免频繁磁盘刷新） */
@@ -223,7 +229,10 @@ void QFileSaveThread::run()
         //        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
         //            QMutexLocker lock(&m_mutex);
         //            if (m_file.isOpen())
+        //            {
         //                m_file.flush();
+        //                ::fdatasync(m_file.handle());       // 真正提交到介质
+        //            }
         //            lastFlush = now;
         //        }
     }
