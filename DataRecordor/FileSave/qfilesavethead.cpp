@@ -126,9 +126,9 @@ void QFileSaveThread::revSerialData(SerialDataRev serialData)
     if (++recvCnt % 1000 == 0)
         qDebug() << "[Serial] total frames:" << recvCnt;
 
-//    QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
-//    data.append('\n');
-//    pushToRing(data.data(), data.size());
+    //    QByteArray data = recordManager->getRecordData(serialData).toLocal8Bit();
+    //    data.append('\n');
+    //    pushToRing(data.data(), data.size());
 
 }
 
@@ -196,10 +196,10 @@ bool QFileSaveThread::CreatFile(QString qsFilePath)
 
 void QFileSaveThread::run()
 {
-    const qint64 FLUSH_INTERVAL_MS = 10 * 1000;  // 10秒
-    QElapsedTimer timer;
-    timer.start();
-    qint64 lastFlush = 0;
+    //    const qint64 FLUSH_INTERVAL_MS = 10 * 1000;  // 10秒
+    //    QElapsedTimer timer;
+    //    timer.start();
+    //    qint64 lastFlush = 0;
     while (!m_bStop) {
         m_usedSpace.acquire();          // 等待数据
         if (m_bStop) break;
@@ -218,14 +218,14 @@ void QFileSaveThread::run()
             m_file.write(writeBuffer, total);
         }
 
-        /* 周期 flush（避免频繁磁盘刷新） */
-        qint64 now = timer.elapsed();
-        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
-            QMutexLocker lock(&m_mutex);
-            if (m_file.isOpen())
-                m_file.flush();
-            lastFlush = now;
-        }
+        //        /* 周期 flush（避免频繁磁盘刷新） */
+        //        qint64 now = timer.elapsed();
+        //        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
+        //            QMutexLocker lock(&m_mutex);
+        //            if (m_file.isOpen())
+        //                m_file.flush();
+        //            lastFlush = now;
+        //        }
     }
     // 退出前一次性写完所有残余
     CloseFile();

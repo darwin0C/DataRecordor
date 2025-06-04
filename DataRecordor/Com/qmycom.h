@@ -27,7 +27,7 @@ typedef struct
 }Can2SeriData;
 #pragma pack()
 
-class QMyCom : public QThread
+class QMyCom : public QObject
 {
     Q_OBJECT
     int revDataCount=0;
@@ -39,18 +39,19 @@ public:
     explicit QMyCom(int index,QObject *parent = 0);
     ~QMyCom();
     QSerialPort *mySeriCom;
-    bool    isOpen;
-    QTCQueue *myComRxBuff;
+    bool    m_isOpen;
+    QTCQueue *m_rxBuf;
     bool initComInterface(const QString &port, int baund);
     bool isComInterfaceOpen();
     //    int sendData(uint canID, uchar *buff, unsigned char len);
     //    int sendData(char *buff, int len);
 private:
     int  commFrameXorNohead(unsigned char *pBuf, unsigned char cFrameHead, unsigned char cFrameTail, unsigned int FrameSize);
-    void run();
+    //void run();
     bool andCheck(unsigned char *pBuf, unsigned int FrameSize);
 
     void parseFrames();
+    void closePort();
 public slots:
     void closeComInterface();
     void comDataHandle();

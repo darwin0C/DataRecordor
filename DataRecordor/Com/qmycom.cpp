@@ -6,31 +6,26 @@
 //const int MinPacketLength = 26;
 
 QMyCom::QMyCom(int index,QObject *parent):
-    QThread(parent)
+    QObject(parent)
 {
     comIndex=index;
     mySeriCom=new QSerialPort();
     connect(mySeriCom, &QSerialPort::readyRead, this, &QMyCom::reciveComData);
-    isOpen=false;
-    myComRxBuff=new QTCQueue(10*1024*1024);
+    m_isOpen=false;
+    m_rxBuf=new QTCQueue(1024*1024);
     connect(&timer,&QTimer::timeout,this,&QMyCom::onTimeHandle);
     timer.start(1000);
 }
 QMyCom::~QMyCom()
 {
-    if (isOpen) {
-        mySeriCom->close();
-    }
+    closePort();
     delete mySeriCom;
-    delete myComRxBuff;
+    delete m_rxBuf;
 }
 //初始化通信口
 bool QMyCom::initComInterface(const QString &port, int baud)
 {
-    if (isOpen) {
-        mySeriCom->close();
-        isOpen = false;
-    }
+    if (m_isOpen) closePort();
 
     mySeriCom->setPortName(port);
     mySeriCom->setBaudRate(baud);
@@ -38,15 +33,21 @@ bool QMyCom::initComInterface(const QString &port, int baud)
     mySeriCom->setParity(QSerialPort::NoParity);
     mySeriCom->setDataBits(QSerialPort::Data8);
 
-    isOpen = mySeriCom->open(QIODevice::ReadWrite);
-    if (!isOpen) {
+    m_isOpen = mySeriCom->open(QIODevice::ReadWrite);
+    if (!m_isOpen) {
         qDebug() << mySeriCom->errorString() << "Serial port error";
     } else {
         qDebug() << "Serial port opened successfully";
     }
 
-    return isOpen;
+    return m_isOpen;
 }
+void QMyCom::closePort()
+{
+    if (m_isOpen) mySeriCom->close();
+    m_isOpen = false;
+}
+
 void QMyCom::onTimeHandle()
 {
     revDataCount++;
@@ -55,7 +56,6 @@ void QMyCom::onTimeHandle()
         comReady=true;
         qDebug()<<"comReady"<<comIndex;
         timer.stop();
-        //emit MsgSignals::getInstance()->comDataReady(comIndex);
     }
 }
 
@@ -63,16 +63,16 @@ void QMyCom::onTimeHandle()
 void QMyCom::closeComInterface()
 {
     if(mySeriCom==NULL) return ;
-    if(isOpen)
+    if(m_isOpen)
     {
         mySeriCom->close();
-        isOpen=false;
+        m_isOpen=false;
     }
 }
 
 bool QMyCom::isComInterfaceOpen()
 {
-    return isOpen;
+    return m_isOpen;
 }
 
 
@@ -86,20 +86,20 @@ void QMyCom::reciveComData()
 
     revDataCount=0;
     if (!tempData.isEmpty()) {
-        myComRxBuff->Add(tempData.data(), tempData.size());
-        //comDataHandle();
+        m_rxBuf->Add(tempData.data(), tempData.size());
+        comDataHandle();
     }
 }
 
-void QMyCom::run()
-{
-    while(isOpen)
-    {
-        //if(comReady)
-        comDataHandle();
-        msleep(1);
-    }
-}
+//void QMyCom::run()
+//{
+//    while(m_isOpen)
+//    {
+//        //if(comReady)
+//        comDataHandle();
+//        msleep(1);
+//    }
+//}
 //void QMyCom::comDataHandle()
 //{
 //    // -----------------------------
@@ -194,34 +194,34 @@ void QMyCom::run()
 
 void QMyCom::comDataHandle()
 {
-    unsigned char tembuff[64]={0};
+
     const int MinPacketLength = sizeof(SerialDataRev);
-    while(myComRxBuff->InUseCount()>=MinPacketLength )
+    unsigned char frame[MinPacketLength];
+
+    while(m_rxBuf->InUseCount()>=MinPacketLength )
     {
 
-        myComRxBuff->Peek(tembuff,MinPacketLength);
-        unsigned char head=tembuff[0];
-        unsigned char flag=tembuff[1];
-        if(head!=0XC1 || flag!=0x0A)
-        {
-            qDebug() << "head or flag error"<<head<<flag;
-            myComRxBuff->MoveReadP(1);
+        m_rxBuf->Peek(frame,MinPacketLength);
+
+        if (frame[0] != 0xC1 || frame[1] != 0x0A) {
+            // 快速同步：一次性跳到下一个 0xC1
+            int skip = m_rxBuf->IndexOf(0xC1);
+            m_rxBuf->MoveReadP(skip > 0 ? skip : 1);
             continue;
         }
-        if (andCheck(tembuff,MinPacketLength)) //判断收到的数据是否正确
-        {
-            SerialDataRev stFromOPCData;
-            CanData CanDataRev;
-            myComRxBuff->Get(&stFromOPCData,MinPacketLength);
-            memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
-            //qDebug() << "emit serialDataSig==========================";
-            emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
-            emit MsgSignals::getInstance()->canDataSig(CanDataRev);
-        }else
-        {
-            qDebug() << "check error=========================="<<QByteArray((char *)tembuff,MinPacketLength).toHex();
-            myComRxBuff->MoveReadP(1);
+
+        if (!andCheck(frame, MinPacketLength)) {
+            m_rxBuf->MoveReadP(1);
+            qDebug() << "check error=========================="<<QByteArray((char *)frame,MinPacketLength).toHex();
+            continue;
         }
+        SerialDataRev stFromOPCData;
+        m_rxBuf->Get(&stFromOPCData,MinPacketLength);
+        emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
+        //qDebug() << "emit serialDataSig==========================";
+        CanData CanDataRev;
+        memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
+        emit MsgSignals::getInstance()->canDataSig(CanDataRev);
     }
 }
 

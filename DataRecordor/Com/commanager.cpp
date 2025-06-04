@@ -25,9 +25,9 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
             serialCom2= startSerial(1,Seriallist[2]);
             serialCom3= startSerial(2,Seriallist[3]);
 #else
-            serialCom1= startSerial(Seriallist[1]);
-            serialCom2= startSerial(Seriallist[3]);
-            serialCom3= startSerial(Seriallist[5]);
+            serialCom1= startSerial(0,Seriallist[1]);
+            serialCom2= startSerial(1,Seriallist[3]);
+            serialCom3= startSerial(2,Seriallist[5]);
 #endif
         }
         catch (std::exception &e)
@@ -69,15 +69,41 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
 
 }
 
-QMyCom *ComManager::startSerial(int index,QString portNum)
+//QMyCom *ComManager::startSerial(int index,QString portNum)
+//{
+//    QMyCom *serialCom=new QMyCom(index);
+//    connect(this,&ComManager::sendCanMegSig,serialCom,&QMyCom::sendCanMegSigHandle);
+//    if(serialCom->initComInterface(portNum,921600))
+//    {
+//        serialCom->start();
+//    }
+//    return serialCom;
+//}
+QMyCom* ComManager::startSerial(int index, QString portName)
 {
-    QMyCom *serialCom=new QMyCom(index);
-    connect(this,&ComManager::sendCanMegSig,serialCom,&QMyCom::sendCanMegSigHandle);
-    if(serialCom->initComInterface(portNum,921600))
-    {
-        serialCom->start();
-    }
-    return serialCom;
+    // 1. 创建 worker & 线程
+    auto *worker = new QMyCom(index, nullptr);
+    auto *th     = new QThread(this);
+
+    // 2. 线程结束后安全删除
+    connect(th, &QThread::finished, worker, &QObject::deleteLater);
+
+    // 3. 把 worker 挂到线程
+    worker->moveToThread(th);
+
+    // 4. 把发送信号接到 worker
+    connect(this,   &ComManager::sendCanMegSig,
+            worker, &QMyCom::sendCanMegSigHandle,
+            Qt::QueuedConnection);
+
+    // 5. 线程启动时再打开串口（避免跨线程直接操作）
+    connect(th, &QThread::started,
+            worker,
+            [worker, portName]() { worker->initComInterface(portName, 921600); },
+    Qt::QueuedConnection);
+
+    th->start();
+    return worker;   // 由 ComManager 保持指针即可
 }
 
 ComManager::~ComManager()
@@ -189,18 +215,18 @@ void ComManager::senSerialDataByCom(QByteArray array,int comIndex)
     //qDebug()<<"senSerialDataByCom port:"<<comIndex<<"data:"<<array.toHex();
     if(comIndex==0)
     {
-        if(serialCom1 && serialCom1->isOpen)
+        if(serialCom1 && serialCom1->m_isOpen)
             serialCom1->sendCanMegSigHandle(array);
 
     }
     else if(comIndex==1)
     {
-        if(serialCom2 && serialCom2->isOpen)
+        if(serialCom2 && serialCom2->m_isOpen)
             serialCom2->sendCanMegSigHandle(array);
     }
     else if(comIndex==2)
     {
-        if(serialCom3 && serialCom3->isOpen)
+        if(serialCom3 && serialCom3->m_isOpen)
             serialCom3->sendCanMegSigHandle(array);
     }
 }
