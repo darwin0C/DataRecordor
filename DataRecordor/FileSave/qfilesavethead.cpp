@@ -8,7 +8,8 @@
 #include <QQueue>
 extern QQueue<SerialDataRev> SerialDataQune;
 extern QMutex gMutex;
-const int CHUNK = 128*1024;
+const int CHUNK = 256*1024;
+const int WRITEBYTE = 128*1024;
 QFileSaveThread::QFileSaveThread(QObject *parent)
     : QThread(parent)
     , m_usedSpace(0)
@@ -205,6 +206,7 @@ void QFileSaveThread::run()
     qint64 lastFlush = 0;
     int bytesWritten=0;
     int loopCount=0;
+    int total = 0;
     while (!m_bStop) {
 
         gMutex.lock();
@@ -218,31 +220,40 @@ void QFileSaveThread::run()
         qDebug()<<"loopCount :"<<loopCount;
         if (m_bStop) break;
         // 1) 批量从 ring 读，直到读满 CHUNK 或 ring 空
-        int got = 0, total = 0;
+        int got = 0;
         /* 把 ring 中可读数据尽量一次搬满 256 KiB */
+
         do {
             got = m_ring->Get(writeBuffer + total, CHUNK - total);
             total += got;
         } while (got > 0 && total < CHUNK);
 
-        if (total > 0 && m_file.isOpen()) {
+        if (total > WRITEBYTE && m_file.isOpen()) {
             QMutexLocker lock(&m_mutex);
             m_file.write(writeBuffer, total);
             qDebug()<<"bytesWritten :"<<total;
             consBytes += total;// ← 新增
-            bytesWritten += total;
-            if (bytesWritten >=  4*1024 * 1024) {  // 每 4 MB 强刷一次
-#ifdef LINUX_MODE
-                ::fdatasync(m_file.handle());       // 真正提交到介质
-#endif
-                bytesWritten = 0;
-            }
+            //            bytesWritten += total;
+            //            if (bytesWritten >=  4*1024 * 1024) {  // 每 4 MB 强刷一次
+            //#ifdef LINUX_MODE
+            //                ::fdatasync(m_file.handle());       // 真正提交到介质
+            //#endif
+            //                bytesWritten = 0;
+            //            }
+            total=0;
         }
         /* 周期 flush（避免频繁磁盘刷新） */
         qint64 now = timer.elapsed();
         if (now - lastFlush >= FLUSH_INTERVAL_MS) {
             CheckFileExists();
             lastFlush = now;
+            if (total > 0 && m_file.isOpen()) {
+                QMutexLocker lock(&m_mutex);
+                m_file.write(writeBuffer, total);
+                qDebug()<<"ontime bytesWritten :"<<total;
+                consBytes += total;//
+                total=0;
+            }
         }
         // 如果这一轮没有处理任何数据，则 sleep 一小会降低CPU占用
         if (loopCount<2) {
