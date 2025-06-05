@@ -43,7 +43,7 @@ private:
     QThread* cpuThread;
     CommandCtrol *commandCtrol;
     QThread* commandThread;
-    int ledBlankTimes = 0;
+
     QTcpServer* mp_TCPServer;
     QTcpSocket* mp_TCPSocket;
     QCpuMonitor  *monitor=nullptr;

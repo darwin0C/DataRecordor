@@ -7,6 +7,7 @@
 #include "canmsgreader.h"
 extern QQueue<SerialDataRev> SerialDataQune;
 extern QMutex gMutex;
+extern int ledBlankTimes;
 QMyCom::QMyCom(int index,QObject *parent):
     QObject(parent)
 {
@@ -84,7 +85,7 @@ void QMyCom::reciveComData()
 {
     QByteArray tempData = mySeriCom->readAll();
     //qDebug()<<"com rev: "<<tempData.toHex();
-
+    ledBlankTimes=0;
     revDataCount=0;
     if (!tempData.isEmpty()) {
         m_rxBuf->Add(tempData.data(), tempData.size());

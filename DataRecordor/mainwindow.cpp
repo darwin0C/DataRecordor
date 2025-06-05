@@ -7,6 +7,7 @@
 QQueue<SerialDataRev> SerialDataQune;
 QMutex gMutex;
 bool SDCardStatus=true;
+int ledBlankTimes = 0;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
