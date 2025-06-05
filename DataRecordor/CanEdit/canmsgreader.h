@@ -10,7 +10,9 @@ class CanMsgReader : public QObject
     Q_OBJECT
     QMap<QString,CanDataValue> parseCanData(const QByteArray &canFrame, const QList<CanDataFormat> &canDataList, int canId);
     quint64 extractBits(const QByteArray &data, int startBit, int length);
-    QList<CanDataFormat> canDataList;
+    QList<CanDataFormat> canDataStatusList;
+    QList<CanDataFormat> canDataEventList;
+    QList<CanDataFormat> readCanDataFromXml(const QString &fileName);
 public:
     explicit CanMsgReader(QObject *parent = nullptr);
     // 获取单例实例
@@ -22,9 +24,10 @@ public:
     // 删除拷贝构造函数和赋值操作符，防止对象拷贝
     CanMsgReader(const CanMsgReader&) = delete;
     CanMsgReader& operator=(const CanMsgReader&) = delete;
+    QList<CanDataFormat> getCanDataEventList();
+    QList<CanDataFormat> getCanDataStatusList();
 
-    bool readCanDataFromXml(const QString &fileName);
-    QMap<QString,CanDataValue> getValues(const CanData &data);
+    QMap<QString,CanDataValue> getValues(const CanData &data,QList<CanDataFormat> canDataList);
     QList<CanDataFormat> getCanDataList();
 signals:
 

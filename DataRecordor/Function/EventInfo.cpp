@@ -9,8 +9,7 @@
 
 EventInfo::EventInfo(QObject *parent) : QObject(parent)
 {
-    QString deviceStatFile=QCoreApplication::applicationDirPath()+Event_CANDataFile;
-    CanMsgReader::Instance()->readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
+
 
     getEventList();
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&EventInfo::processCanData);
@@ -50,14 +49,14 @@ void EventInfo::processCanData(const CanData &data)
     deviceDataHandle(data);
     if(!eventList.contains(data.dataid))
         return;
-    QMap<QString,CanDataValue> dataMap= CanMsgReader::Instance()->getValues(data);
+    QMap<QString,CanDataValue> dataMap= CanMsgReader::Instance()->getValues(data,CanMsgReader::Instance()->getCanDataEventList());
     qDebug()<<"dataMap"<<dataMap.count();
     refrushStat(data.dataid,dataMap,data.dateTime);
 }
 
 void EventInfo::getEventList()
 {
-    for(const CanDataFormat &canData:CanMsgReader::Instance()->getCanDataList())
+    for(const CanDataFormat &canData:CanMsgReader::Instance()->getCanDataEventList())
     {
         eventList[canData.id]=canData.msgName;
     }

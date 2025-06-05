@@ -6,8 +6,7 @@
 #include "MsgSignals.h"
 DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
 {
-    QString deviceStatFile=QCoreApplication::applicationDirPath()+DeviceStat_CANDataFile;
-    CanMsgReader::Instance()->readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
+
 
     getDeviceLists();
 
@@ -34,7 +33,7 @@ void DeviceManager::processCanData(const CanData &data)
 {
     if(!devices.contains(data.dataid))
         return;
-    QMap<QString,CanDataValue> dataMap= CanMsgReader::Instance()->getValues(data);
+    QMap<QString,CanDataValue> dataMap= CanMsgReader::Instance()->getValues(data,CanMsgReader::Instance()->getCanDataStatusList());
     if(data.dataid==0x0CF1A1CB)
         qDebug()<<"CanData stat rev:"<<QTime::currentTime().toString("HH:mm:ss.zzz")
                <<QString::number(data.dataid,16)
@@ -79,7 +78,7 @@ void DeviceManager::saveDeviceStatSignals(int statID,const QMap<QString,CanDataV
 //获取设备列表
 void DeviceManager::getDeviceLists()
 {
-    for(const CanDataFormat &device:CanMsgReader::Instance()->getCanDataList())
+    for(const CanDataFormat &device:CanMsgReader::Instance()->getCanDataStatusList())
     {
         qDebug()<<"device.id"<<QString::number(device.id,16);
         DeviceStat *deviceStat=new DeviceStat(device.id,this);

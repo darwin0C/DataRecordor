@@ -5,18 +5,26 @@
 #include <cmath>
 #include <QDomDocument>
 #include <QFile>
+#include <QCoreApplication>
 
 CanMsgReader::CanMsgReader(QObject *parent) : QObject(parent)
 {
 
+
+    QString deviceStatFile=QCoreApplication::applicationDirPath()+DeviceStat_CANDataFile;
+    readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
+
+    QString eventFile=QCoreApplication::applicationDirPath()+Event_CANDataFile;
+    readCanDataFromXml(eventFile);//读取CAN协议配置文件
 }
 
-bool CanMsgReader::readCanDataFromXml(const QString& fileName) {
+QList<CanDataFormat> CanMsgReader::readCanDataFromXml(const QString& fileName) {
     // 打开文件
+    QList<CanDataFormat> canDataList;
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "Failed to open file for reading";
-        return false;
+        return canDataList;
     }
 
     // 读取文件内容到 QDomDocument
@@ -24,7 +32,7 @@ bool CanMsgReader::readCanDataFromXml(const QString& fileName) {
     if (!document.setContent(&file)) {
         qDebug() << "Failed to parse XML content";
         file.close();
-        return false;
+        return canDataList;
     }
     file.close();
 
@@ -32,7 +40,7 @@ bool CanMsgReader::readCanDataFromXml(const QString& fileName) {
     QDomElement root = document.documentElement();
     if (root.tagName() != "CAN_Communication") {
         qDebug() << "Invalid root element";
-        return false;
+        return canDataList;
     }
 
     // 解析每个 Message 节点
@@ -95,19 +103,22 @@ bool CanMsgReader::readCanDataFromXml(const QString& fileName) {
         messageNode = messageNode.nextSibling();
     }
 
-    return true;
+    return canDataList;
 }
 
-QMap<QString,CanDataValue> CanMsgReader::getValues(const CanData &data)
+QMap<QString,CanDataValue> CanMsgReader::getValues(const CanData &data,QList<CanDataFormat> canDataList)
 {
     return  parseCanData( QByteArray((char *)data.data,8),canDataList,data.dataid);
 }
 
-QList<CanDataFormat> CanMsgReader::getCanDataList()
+QList<CanDataFormat> CanMsgReader::getCanDataStatusList()
 {
-    return canDataList;
+    return canDataStatusList;
 }
-
+QList<CanDataFormat> CanMsgReader::getCanDataEventList()
+{
+    return canDataEventList;
+}
 // 辅助函数：从数据字节流中提取指定起始位和长度的值
 quint64 CanMsgReader::extractBits(const QByteArray &data, int startBit, int length) {
     quint64 value = 0;

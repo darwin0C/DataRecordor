@@ -48,18 +48,18 @@ void QFileSaveThread::onFlushTimeout()
 {
     static int loopcount=0;
     loopcount++;
-    if(loopcount%10==0)
+    if (!m_qsFilePath.isEmpty() && !QFile::exists(m_qsFilePath)) {
+        CreatFile(m_qsFilePath);
+    }
+    if(loopcount%15==0)
     {
         QMutexLocker lock(&m_mutex);
+        // 定时检查：若文件被删除，则重建同名文件
         if (m_file.isOpen()) {
             m_file.flush();                     // 把文件缓冲写到磁盘
-            // 可选：这里也可以打印日志
-            // qDebug() << "[FileSave] flush by timer";
-#ifdef LINUX_MODE
-            ::fdatasync(m_file.handle());       // 真正提交到介质
-#endif
         }
     }
+
     static quint64 lastProd = 0, lastCons = 0;
 
     quint64 p = prodBytes.load();
@@ -100,6 +100,7 @@ void QFileSaveThread::onCreatNewFile(QString fileName)
 void QFileSaveThread::pushToRing(char *src, int len)
 {
     int freeBytes = m_ring->FreeCount();
+    if (freeBytes <= 0) return;
     int chunk = qMin(len , freeBytes);
     m_ring->Add(src , chunk);
     prodBytes += chunk; // ← 新增
@@ -196,8 +197,7 @@ void QFileSaveThread::run()
     qint64 lastFlush = 0;
     //int bytesWritten=0;
     int loopCount=0;
-    int total = 0;
-    int reserve=128;
+    const int reserve=256;
     while (!m_bStop) {
 
         gMutex.lock();
@@ -208,10 +208,11 @@ void QFileSaveThread::run()
             revSerialData(SerialDataQune.dequeue());
         }
         gMutex.unlock();
-        qDebug()<<"loopCount :"<<loopCount;
+        //qDebug()<<"loopCount :"<<loopCount;
         if (m_bStop) break;
         // 1) 批量从 ring 读，直到读满 CHUNK 或 ring 空
         int got = 0;
+        int total = 0;
         /* 把 ring 中可读数据尽量一次搬满 256 KiB */
 
         do {
@@ -219,44 +220,31 @@ void QFileSaveThread::run()
             total += got;
         } while (got > 0 && total < CHUNK);
 
-        if (total > WRITEBYTE && m_file.isOpen()) {
+        if (total > 0/*WRITEBYTE*/ && m_file.isOpen()) {
             QMutexLocker lock(&m_mutex);
             m_file.write(writeBuffer, total);
-            qDebug()<<"bytesWritten :"<<total;
+            //qDebug()<<"bytesWritten :"<<total;
             consBytes += total;// ← 新增
-            //            bytesWritten += total;
-            //            if (bytesWritten >=  4*1024 * 1024) {  // 每 4 MB 强刷一次
-            //#ifdef LINUX_MODE
-            //                ::fdatasync(m_file.handle());       // 真正提交到介质
-            //#endif
-            //                bytesWritten = 0;
-            //            }
             total=0;
         }
         /* 周期 flush（避免频繁磁盘刷新） */
         qint64 now = timer.elapsed();
         if (now - lastFlush >= FLUSH_INTERVAL_MS) {
-            CheckFileExists();
+            //CheckFileExists();
             lastFlush = now;
-            if (total > 0 && m_file.isOpen()) {
-                QMutexLocker lock(&m_mutex);
-                m_file.write(writeBuffer, total);
-                qDebug()<<"ontime bytesWritten :"<<total;
-                consBytes += total;//
-                total=0;
+            QMutexLocker lock(&m_mutex);
+            if (m_file.isOpen()) {
+                m_file.flush();                     // 把文件缓冲写到磁盘
             }
         }
         // 如果这一轮没有处理任何数据，则 sleep 一小会降低CPU占用
-        if (loopCount<2) {
+        if (loopCount<5) {
             QThread::msleep(10); // 10ms 视系统而定，可调为 5~50ms
         }
-        else if (loopCount<10) {
-            QThread::msleep(5); // 10ms 视系统而定，可调为 5~50ms
+        else if (loopCount<50) {
+            QThread::msleep(2); // 10ms 视系统而定，可调为 5~50ms
         }
-        else if(loopCount<70)
-        {
-            QThread::msleep(2);
-        }
+
         loopCount=0;
     }
     // 退出前一次性写完所有残余
@@ -264,10 +252,7 @@ void QFileSaveThread::run()
 }
 void QFileSaveThread::CheckFileExists()
 {
-    // 定时检查：若文件被删除，则重建同名文件
-    if (!m_qsFilePath.isEmpty() && !QFile::exists(m_qsFilePath)) {
-        CreatFile(m_qsFilePath);
-    }
+
 }
 
 int QFileSaveThread::diskUsedPercent()
