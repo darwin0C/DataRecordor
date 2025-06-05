@@ -177,7 +177,10 @@ void QFileSaveThread::run()
             QByteArray line = packSerial(SerialDataQune.dequeue());
             int  len  = line.size();
             if(len>1024)
+            {
+                qDebug()<<"error,lose Data"<<line.toHex();
                 break;
+            }
             // 复制到缓存
 
             memcpy(writeBuffer + bufferUsed, line.constData(), len);
