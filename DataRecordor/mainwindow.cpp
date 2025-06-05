@@ -2,8 +2,10 @@
 #include "ui_mainwindow.h"
 #include <QDateTime>
 #include "MsgSignals.h"
-
-
+#include <QQueue>
+#include <QMutex>
+QQueue<SerialDataRev> SerialDataQune;
+QMutex gMutex;
 bool SDCardStatus=true;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

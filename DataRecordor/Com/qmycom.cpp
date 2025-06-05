@@ -3,8 +3,9 @@
 #include  <QDebug>
 #include "MsgSignals.h"
 #include <QDateTime>
-//const int MinPacketLength = 26;
-
+#include <QQueue>
+extern QQueue<SerialDataRev> SerialDataQune;
+extern QMutex gMutex;
 QMyCom::QMyCom(int index,QObject *parent):
     QObject(parent)
 {
@@ -127,7 +128,10 @@ void QMyCom::comDataHandle()
         }
         SerialDataRev stFromOPCData;
         m_rxBuf->Get(&stFromOPCData,MinPacketLength);
-        emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
+        gMutex.lock();
+        SerialDataQune.enqueue(stFromOPCData);
+        gMutex.unlock();
+        //emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
         //qDebug() << "emit serialDataSig==========================";
         //        CanData CanDataRev;
         //        memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));

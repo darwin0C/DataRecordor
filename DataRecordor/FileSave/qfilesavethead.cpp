@@ -5,7 +5,9 @@
 #include <QTimer>
 #include "MsgSignals.h"
 #include <unistd.h>
-
+#include <QQueue>
+extern QQueue<SerialDataRev> SerialDataQune;
+extern QMutex gMutex;
 const int CHUNK = 128*1024;
 QFileSaveThread::QFileSaveThread(QObject *parent)
     : QThread(parent)
@@ -82,7 +84,7 @@ void QFileSaveThread::stopRecord()
 {
     m_bStop = true;
     /* 唤醒 run() 一次，防止死等 */
-    m_usedSpace.release();
+    //m_usedSpace.release();
 }
 
 void QFileSaveThread::onCreatNewFile(QString fileName)
@@ -106,7 +108,7 @@ void QFileSaveThread::pushToRing(char *src, int len)
         prodBytes += chunk; // ← 新增
         offset += chunk;
         /* 每写入 chunk 字节，给 run() 放行 chunk 次 */
-        m_usedSpace.release(chunk);
+        //m_usedSpace.release(chunk);
     }
 }
 
@@ -200,8 +202,17 @@ void QFileSaveThread::run()
     timer.start();
     qint64 lastFlush = 0;
     int bytesWritten=0;
+    int loopCount=0;
     while (!m_bStop) {
-        m_usedSpace.acquire();          // 等待数据
+        gMutex.lock();
+        while(!SerialDataQune.empty()&& loopCount++<100)
+        {
+            revSerialData(SerialDataQune.dequeue());
+        }
+        gMutex.unlock();
+        //qDebug()<<"loopCount :"<<loopCount;
+        loopCount=0;
+        //m_usedSpace.acquire();          // 等待数据
         if (m_bStop) break;
 
         // 1) 批量从 ring 读，直到读满 CHUNK 或 ring 空
@@ -224,22 +235,29 @@ void QFileSaveThread::run()
             }
         }
 
-        //        /* 周期 flush（避免频繁磁盘刷新） */
-        //        qint64 now = timer.elapsed();
-        //        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
-        //            QMutexLocker lock(&m_mutex);
-        //            if (m_file.isOpen())
-        //            {
-        //                m_file.flush();
-        //                ::fdatasync(m_file.handle());       // 真正提交到介质
-        //            }
-        //            lastFlush = now;
-        //        }
+        /* 周期 flush（避免频繁磁盘刷新） */
+        qint64 now = timer.elapsed();
+        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
+            //QMutexLocker lock(&m_mutex);
+            //            if (m_file.isOpen())
+            //            {
+            //                m_file.flush();
+            //                ::fdatasync(m_file.handle());       // 真正提交到介质
+            //            }
+            CheckFileExists();
+            lastFlush = now;
+        }
     }
     // 退出前一次性写完所有残余
     CloseFile();
 }
-
+void QFileSaveThread::CheckFileExists()
+{
+    // 定时检查：若文件被删除，则重建同名文件
+    if (!m_qsFilePath.isEmpty() && !QFile::exists(m_qsFilePath)) {
+        CreatFile(m_qsFilePath);
+    }
+}
 
 int QFileSaveThread::diskUsedPercent()
 {
