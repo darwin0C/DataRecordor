@@ -47,6 +47,7 @@ QFileSaveThread::~QFileSaveThread()
 void QFileSaveThread::onFlushTimeout()
 {
     static int loopcount=0;
+    loopcount++;
     if(loopcount%10==0)
     {
         QMutexLocker lock(&m_mutex);
@@ -98,21 +99,10 @@ void QFileSaveThread::onCreatNewFile(QString fileName)
 /* ======================== 公用 PUSH 接口 ======================== */
 void QFileSaveThread::pushToRing(char *src, int len)
 {
-    int offset = 0;
-    while (offset < len && !m_bStop) {
-        int freeBytes = m_ring->FreeCount();
-        if (freeBytes == 0) {
-            /* ring 满 => 让出 CPU，等 run() 消费 */
-            QThread::yieldCurrentThread();
-            continue;
-        }
-        int chunk = qMin(len - offset, freeBytes);
-        m_ring->Add(src + offset, chunk);
-        prodBytes += chunk; // ← 新增
-        offset += chunk;
-        /* 每写入 chunk 字节，给 run() 放行 chunk 次 */
-        //m_usedSpace.release(chunk);
-    }
+    int freeBytes = m_ring->FreeCount();
+    int chunk = qMin(len , freeBytes);
+    m_ring->Add(src , chunk);
+    prodBytes += chunk; // ← 新增
 }
 
 void QFileSaveThread::onRevCpuinfo(double usedPer)
@@ -204,13 +194,14 @@ void QFileSaveThread::run()
     QElapsedTimer timer;
     timer.start();
     qint64 lastFlush = 0;
-    int bytesWritten=0;
+    //int bytesWritten=0;
     int loopCount=0;
     int total = 0;
+    int reserve=128;
     while (!m_bStop) {
 
         gMutex.lock();
-        while(!SerialDataQune.empty())
+        while(!SerialDataQune.empty() && m_ring->FreeCount()>reserve)
         {
             if(loopCount++>100)
                 break;
