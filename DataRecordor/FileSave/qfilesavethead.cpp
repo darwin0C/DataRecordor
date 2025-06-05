@@ -53,7 +53,9 @@ void QFileSaveThread::onFlushTimeout()
             m_file.flush();                     // 把文件缓冲写到磁盘
             // 可选：这里也可以打印日志
             // qDebug() << "[FileSave] flush by timer";
+#ifdef LINUX_MODE
             ::fdatasync(m_file.handle());       // 真正提交到介质
+#endif
         }
     }
     static quint64 lastProd = 0, lastCons = 0;
@@ -123,7 +125,7 @@ void QFileSaveThread::revSerialData(SerialDataRev serialData)
 {
     if (m_bStop) return;
 
-    static int recvCnt = 0;
+    static qint64 recvCnt = 0;
     if (++recvCnt % 1000 == 0)
         qDebug() << "[Serial] total frames:" << recvCnt;
 
@@ -205,8 +207,9 @@ void QFileSaveThread::run()
     int loopCount=0;
     while (!m_bStop) {
         gMutex.lock();
-        while(!SerialDataQune.empty()&& loopCount++<100)
+        while(!SerialDataQune.empty())
         {
+            loopCount++;
             revSerialData(SerialDataQune.dequeue());
         }
         gMutex.unlock();
@@ -230,7 +233,9 @@ void QFileSaveThread::run()
             consBytes += total;// ← 新增
             bytesWritten += total;
             if (bytesWritten >=  2*1024 * 1024) {  // 每 4 MB 强刷一次
+#ifdef LINUX_MODE
                 ::fdatasync(m_file.handle());       // 真正提交到介质
+#endif
                 bytesWritten = 0;
             }
         }
