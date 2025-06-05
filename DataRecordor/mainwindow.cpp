@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     startRecord();
     startLEDThread();
     startStatus();
-    //startCommandCtrl();
+    startCommandCtrl();
 
     mp_TCPServer = new QTcpServer();
     if(!mp_TCPServer->listen(QHostAddress::Any, 8080))
@@ -186,7 +186,6 @@ void MainWindow::startRecord()
         mySaveDataThread=new QFileSaveThread(this);
 
         qRegisterMetaType<SerialDataRev>("SerialDataRev");//自定义类型需要先注册
-        connect(MsgSignals::getInstance(),&MsgSignals::serialDataSig,mySaveDataThread,&QFileSaveThread::revSerialData);
         connect(MsgSignals::getInstance(),&MsgSignals::sendCpuinfo,mySaveDataThread,&QFileSaveThread::onRevCpuinfo);
         connect(this,&MainWindow::delAllFilesSig,mySaveDataThread,&QFileSaveThread::delAllFiles);
     }

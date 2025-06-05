@@ -35,6 +35,7 @@ class QMyCom : public QObject
     int comIndex=0;
     bool comReady=false;
     int recvCnt = 0;
+    int MinPacketLength;
 public:
     explicit QMyCom(int index,QObject *parent = 0);
     ~QMyCom();

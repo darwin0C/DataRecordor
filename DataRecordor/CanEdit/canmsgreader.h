@@ -2,6 +2,7 @@
 #define CANMSGREADER_H
 
 #include <QObject>
+#include <QSet>
 #include "DeviceData.h"
 #include "data.h"
 
@@ -24,6 +25,8 @@ public:
     // 删除拷贝构造函数和赋值操作符，防止对象拷贝
     CanMsgReader(const CanMsgReader&) = delete;
     CanMsgReader& operator=(const CanMsgReader&) = delete;
+
+    QSet<int> CANIDSet;
     QList<CanDataFormat> getCanDataEventList();
     QList<CanDataFormat> getCanDataStatusList();
 

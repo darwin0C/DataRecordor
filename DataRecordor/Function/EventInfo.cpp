@@ -59,6 +59,7 @@ void EventInfo::getEventList()
     for(const CanDataFormat &canData:CanMsgReader::Instance()->getCanDataEventList())
     {
         eventList[canData.id]=canData.msgName;
+        CanMsgReader::Instance()->CANIDSet.insert(canData.id);
     }
 }
 void EventInfo::deviceDataHandle(const CanData &data)

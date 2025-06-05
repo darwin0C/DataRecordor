@@ -4,6 +4,7 @@
 #include "MsgSignals.h"
 #include <QDateTime>
 #include <QQueue>
+#include "canmsgreader.h"
 extern QQueue<SerialDataRev> SerialDataQune;
 extern QMutex gMutex;
 QMyCom::QMyCom(int index,QObject *parent):
@@ -12,7 +13,7 @@ QMyCom::QMyCom(int index,QObject *parent):
     comIndex=index;
     m_isOpen=false;
     m_rxBuf=new QTCQueue(1*1024*1024);
-
+    MinPacketLength = sizeof(SerialDataRev);
 }
 QMyCom::~QMyCom()
 {
@@ -104,7 +105,7 @@ void QMyCom::reciveComData()
 void QMyCom::comDataHandle()
 {
 
-    const int MinPacketLength = sizeof(SerialDataRev);
+
     unsigned char frame[MinPacketLength];
 
     while(m_rxBuf->InUseCount()>=MinPacketLength )
@@ -133,9 +134,15 @@ void QMyCom::comDataHandle()
         gMutex.unlock();
         //emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
         //qDebug() << "emit serialDataSig==========================";
-        //        CanData CanDataRev;
-        //        memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
-        //        emit MsgSignals::getInstance()->canDataSig(CanDataRev);
+        uint canid=stFromOPCData.candata.dataid;
+        if(CanMsgReader::Instance()->CANIDSet.contains(canid)||
+                canid>>16==0x1CEC ||canid>>16==0x1CEB)
+        {
+            CanData CanDataRev;
+            memcpy(&CanDataRev,&stFromOPCData.candata,sizeof(CanData));
+            emit MsgSignals::getInstance()->canDataSig(CanDataRev);
+        }
+
     }
 }
 

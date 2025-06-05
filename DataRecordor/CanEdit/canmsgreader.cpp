@@ -12,10 +12,10 @@ CanMsgReader::CanMsgReader(QObject *parent) : QObject(parent)
 
 
     QString deviceStatFile=QCoreApplication::applicationDirPath()+DeviceStat_CANDataFile;
-    readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
+    canDataStatusList=readCanDataFromXml(deviceStatFile);//读取CAN协议配置文件
 
     QString eventFile=QCoreApplication::applicationDirPath()+Event_CANDataFile;
-    readCanDataFromXml(eventFile);//读取CAN协议配置文件
+    canDataEventList= readCanDataFromXml(eventFile);//读取CAN协议配置文件
 }
 
 QList<CanDataFormat> CanMsgReader::readCanDataFromXml(const QString& fileName) {

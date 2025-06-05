@@ -6,13 +6,12 @@
 #include "MsgSignals.h"
 DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
 {
-
-
     getDeviceLists();
-
     dbOperator=DbOperator::Get();
+
     QString deviceNameFile=QCoreApplication::applicationDirPath()+DeviceNameFile;
     loadAndInsertDevicesFromXml(deviceNameFile);
+
     qRegisterMetaType<CanData>("CanData");
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&DeviceManager::processCanData);
 }
@@ -85,6 +84,7 @@ void DeviceManager::getDeviceLists()
         connect(deviceStat,&DeviceStat::sig_WorkTimeRecord,this,&DeviceManager::recordWorkTime);
         connect(deviceStat,&DeviceStat::sig_StatChanged,this,&DeviceManager::StatWorkChange);
         devices[device.id]=deviceStat;
+        CanMsgReader::Instance()->CANIDSet.insert(device.id);
     }
     qDebug()<<"deviceList"<<devices.count();
 }
