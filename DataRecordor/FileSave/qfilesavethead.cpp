@@ -206,21 +206,19 @@ void QFileSaveThread::run()
     int bytesWritten=0;
     int loopCount=0;
     while (!m_bStop) {
+
         gMutex.lock();
         while(!SerialDataQune.empty())
         {
-            loopCount++;
+            if(loopCount++>100)
+                break;
             revSerialData(SerialDataQune.dequeue());
         }
         gMutex.unlock();
-        //qDebug()<<"loopCount :"<<loopCount;
-        loopCount=0;
-        //m_usedSpace.acquire();          // 等待数据
+        qDebug()<<"loopCount :"<<loopCount;
         if (m_bStop) break;
-
         // 1) 批量从 ring 读，直到读满 CHUNK 或 ring 空
         int got = 0, total = 0;
-
         /* 把 ring 中可读数据尽量一次搬满 256 KiB */
         do {
             got = m_ring->Get(writeBuffer + total, CHUNK - total);
@@ -230,28 +228,34 @@ void QFileSaveThread::run()
         if (total > 0 && m_file.isOpen()) {
             QMutexLocker lock(&m_mutex);
             m_file.write(writeBuffer, total);
+            qDebug()<<"bytesWritten :"<<total;
             consBytes += total;// ← 新增
             bytesWritten += total;
-            if (bytesWritten >=  2*1024 * 1024) {  // 每 4 MB 强刷一次
+            if (bytesWritten >=  4*1024 * 1024) {  // 每 4 MB 强刷一次
 #ifdef LINUX_MODE
                 ::fdatasync(m_file.handle());       // 真正提交到介质
 #endif
                 bytesWritten = 0;
             }
         }
-
         /* 周期 flush（避免频繁磁盘刷新） */
         qint64 now = timer.elapsed();
         if (now - lastFlush >= FLUSH_INTERVAL_MS) {
-            //QMutexLocker lock(&m_mutex);
-            //            if (m_file.isOpen())
-            //            {
-            //                m_file.flush();
-            //                ::fdatasync(m_file.handle());       // 真正提交到介质
-            //            }
             CheckFileExists();
             lastFlush = now;
         }
+        // 如果这一轮没有处理任何数据，则 sleep 一小会降低CPU占用
+        if (loopCount<2) {
+            QThread::msleep(10); // 10ms 视系统而定，可调为 5~50ms
+        }
+        else if (loopCount<10) {
+            QThread::msleep(5); // 10ms 视系统而定，可调为 5~50ms
+        }
+        else if(loopCount<70)
+        {
+            QThread::msleep(2);
+        }
+        loopCount=0;
     }
     // 退出前一次性写完所有残余
     CloseFile();

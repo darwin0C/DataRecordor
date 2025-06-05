@@ -19,7 +19,7 @@ public:
     QByteArray getDeviceTotalWorktime(int deviceAddress, int &deviceCount);
     QList<DeviceStatusInfo> getHistoryDeviceStat(int deviceAddress, TimeCondition *timeConditionPtr);
 private:
-    CanMsgReader canReader;
+
     //QList<CanDataFormat> canDataList;
     //QList<int> deviceList;
     QMap<int,DeviceStat*> devices;

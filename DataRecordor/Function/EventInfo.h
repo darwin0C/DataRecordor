@@ -21,7 +21,7 @@ public:
     void setAutoReport(bool enable);
     QByteArray getCurrentAlarmData();
 private:
-    CanMsgReader canReader;
+
     QMap<int,QString> eventList;
 
     GunMoveData gunMoveData;
