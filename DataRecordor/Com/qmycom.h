@@ -50,7 +50,6 @@ private:
     int  commFrameXorNohead(unsigned char *pBuf, unsigned char cFrameHead, unsigned char cFrameTail, unsigned int FrameSize);
     //void run();
     bool andCheck(unsigned char *pBuf, unsigned int FrameSize);
-
     void parseFrames();
     void closePort();
 public slots:

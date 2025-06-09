@@ -194,7 +194,8 @@ void QFileSaveThread::run()
         /* ---------- 满足阈值就落盘 ---------- */
         if (bufferUsed >= WRITEBYTE && m_file.isOpen()) {
             QMutexLocker fl(&m_mutex);
-            m_file.write(writeBuffer, bufferUsed);
+            if(sdCardStat())
+                m_file.write(writeBuffer, bufferUsed);
             consBytes += bufferUsed;
             bufferUsed = 0;
         }
@@ -203,7 +204,8 @@ void QFileSaveThread::run()
         if (now - lastFlush >= FLUSH_INTERVAL_MS) {
             if (bufferUsed > 0 && m_file.isOpen()) {
                 QMutexLocker fl(&m_mutex);
-                m_file.write(writeBuffer, bufferUsed);
+                if(sdCardStat())
+                    m_file.write(writeBuffer, bufferUsed);
                 consBytes += bufferUsed;
                 bufferUsed = 0;
             }
@@ -233,7 +235,11 @@ int QFileSaveThread::diskRemains()
 
 bool QFileSaveThread::sdCardStat()
 {
+#ifdef LINUX_MODE
     return recordManager->isSDCardOK;
+#else
+    return true;
+#endif
 }
 void QFileSaveThread::delAllFiles()
 {

@@ -118,11 +118,9 @@ void QMyCom::comDataHandle()
             // 快速同步：一次性跳到下一个 0xC1
             int skip = m_rxBuf->IndexOf(0xC1);
             m_rxBuf->MoveReadP(skip > 0 ? skip : 1);
-            //m_rxBuf->MoveReadP(1);
             qDebug() << "Head or Flag error"<<frame[0]<<frame[1];
             continue;
         }
-
         if (!andCheck(frame, MinPacketLength)) {
             m_rxBuf->MoveReadP(1);
             qDebug() << "check error=========================="<<QByteArray((char *)frame,MinPacketLength).toHex();
