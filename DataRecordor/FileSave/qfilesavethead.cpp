@@ -147,11 +147,13 @@ bool QFileSaveThread::CreatFile(QString qsFilePath)
             return false;
         }
     }
-    QMutexLocker locker(&m_mutex);
-    if (m_file.isOpen())
-        m_file.close();
-    m_file.setFileName(qsFilePath);
-    m_bOpen = m_file.open(QIODevice::Append | QIODevice::ReadWrite);
+    {
+        QMutexLocker locker(&m_mutex);
+        if (m_file.isOpen())
+            m_file.close();
+        m_file.setFileName(qsFilePath);
+        m_bOpen = m_file.open(QIODevice::Append | QIODevice::ReadWrite);
+    }
     qDebug() << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<";
     qDebug() << "Creat save file" << qsFilePath;
     qDebug() << "Open file" << m_bOpen ;
