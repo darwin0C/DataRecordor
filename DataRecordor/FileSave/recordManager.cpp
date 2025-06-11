@@ -1,4 +1,4 @@
-#include "recordManager.h"
+﻿#include "recordManager.h"
 #include <QDebug>
 #include "MsgSignals.h"
 #include <QDirIterator>
@@ -43,8 +43,8 @@ QString RecordManager::getRecordData(const SerialDataRev &dataRev)
     /* ---------- 2) 继续拼接头部 ---------- */
     char headBuf[64];
     int headLen = std::snprintf(headBuf, sizeof(headBuf),
-                                "%s %s ,prot:%d : ",
-                                dateBuf, timeBuf, dataRev.port);
+                                "%s ,prot:%d : ",
+                                timeBuf, dataRev.port);
     QString head = QString::fromLatin1(headBuf, headLen);
     // 2) 十六进制 ID 和 data
     QString can_id = QString::number(dataRev.candata.dataid, 16)
@@ -60,14 +60,15 @@ QString RecordManager::getRecordData(const SerialDataRev &dataRev)
 
 void RecordManager::checkTime(QString date,QString time)
 {
-    if (!isTimeSet) {
-#ifdef LINUX_MODE
-        SetSysTime(date.left(4) + "-" + date.mid(5,2) + "-" + date.right(2),
-                   time.left(8));
-#endif
-    }
+
     if (date == revDate && time.left(2) == revTime)
         return;                         // 早退，减小临界区
+
+#ifdef LINUX_MODE
+    SetSysTime(date.left(4) + "-" + date.mid(5,2) + "-" + date.right(2),
+               time.left(8));
+#endif
+
     revDate = date;
     revTime = time.left(2);
 
@@ -202,6 +203,7 @@ void RecordManager::creatNewFile(QString date,QString time)
     //QFileInfo currntFile(gCurrentfileName);
     if(date!=currentDate || time!=currentTime/*||!currntFile.exists()*/)
     {
+        isTimeSet=false;
         currentDate=date;
         currentTime=time;
         newfile(date,time);
@@ -238,7 +240,7 @@ void RecordManager::onCheckDisk()
     QFile mnts("/proc/mounts");
     if (!mnts.open(QIODevice::ReadOnly | QIODevice::Text)) {
         isSDCardOK = false;
-        qWarning() << "[RecordManager] 无法打开 /proc/mounts";
+        qWarning() << "[RecordManager] error open /proc/mounts,SD card error";
         return;
     }
     QByteArray all = mnts.readAll();
@@ -281,7 +283,7 @@ void RecordManager::onCheckDisk()
     diskUsed        = int(usedKB);
     diskUsedPercent = pct;
     isSDCardOK      = true;
-    //qDebug()<<"diskAll :"<<diskAll<<" diskFree  :"<<diskFree<<" diskUsedPercent "<<diskUsedPercent;
+    qDebug()<<"diskAll :"<<diskAll<<" diskFree  :"<<diskFree<<" diskUsedPercent "<<diskUsedPercent;
     // 5) 如剩余空间不足则清理最旧文件
     if (diskFree < diskMinFree) {
         delOldestFile();
@@ -315,6 +317,7 @@ void RecordManager::SetSysTime(QString date,QString time)
 {
 #ifdef LINUX_MODE
     QString str = "date -s "+date;
+    qDebug()<<"time set"<<str;
     system(str.toLatin1().data());
     str = "date -s "+time;
     system(str.toLatin1().data());

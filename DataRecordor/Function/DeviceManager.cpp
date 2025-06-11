@@ -14,6 +14,7 @@ DeviceManager::DeviceManager(QObject *parent) : QObject(parent)
 
     qRegisterMetaType<CanData>("CanData");
     connect(MsgSignals::getInstance(),&MsgSignals::canDataSig,this,&DeviceManager::processCanData);
+
 }
 
 void DeviceManager::test()
