@@ -59,16 +59,12 @@ void QFileSaveThread::onFlushTimeout()
     }
 
     static quint64 lastProd = 0, lastCons = 0;
-
     quint64 p = prodBytes.load();
     quint64 c = consBytes.load();
-
     int deltaP  = int(p - lastProd);
     int deltaC  = int(c - lastCons);
-
     lastProd = p;
     lastCons = c;
-
     qDebug().nospace()
             << "[STAT] prod " << deltaP / 1024 << " KiB/s  "
             << "cons "       << deltaC / 1024 << " KiB/s  ";

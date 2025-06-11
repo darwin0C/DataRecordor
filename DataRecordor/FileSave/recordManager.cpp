@@ -195,16 +195,7 @@ void RecordManager::getAllFileName(QString path, QVector<QString> &path_vec)
         }
     }
 }
-void RecordManager::delAllFiles(void)
-{
-    QString del_file = gPath;
-    QDir dir;
-    if (dir.exists(del_file))
-    {
-        dir.setPath(del_file);
-        dir.removeRecursively();
-    }
-}
+
 void RecordManager::creatNewFile(QString date,QString time)
 {
     //qDebug()<<"<<<<<<<<<creatNewFile=========";
