@@ -75,6 +75,7 @@ void RecordManager::checkTime(QString date,QString time)
     if (isSDCardOK && revTime.length() >= 2)
         creatNewFile(revDate, revTime);
 }
+
 RecordManager::~RecordManager()
 {
 
@@ -196,16 +197,7 @@ void RecordManager::getAllFileName(QString path, QVector<QString> &path_vec)
         }
     }
 }
-void RecordManager::delAllFiles(void)
-{
-    QString del_file = gPath;
-    QDir dir;
-    if (dir.exists(del_file))
-    {
-        dir.setPath(del_file);
-        dir.removeRecursively();
-    }
-}
+
 void RecordManager::creatNewFile(QString date,QString time)
 {
     //qDebug()<<"<<<<<<<<<creatNewFile=========";
@@ -304,7 +296,7 @@ void RecordManager::onCheckFileExists()
 {
     // 定时检查：若文件被删除，则重建同名文件
     if (!gCurrentfileName.isEmpty() && !QFile::exists(gCurrentfileName)) {
-        QMutexLocker locker(&fileMutex);
+        //QMutexLocker locker(&fileMutex);
         newfile(currentDate, currentTime);
     }
 }

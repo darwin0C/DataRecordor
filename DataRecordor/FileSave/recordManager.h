@@ -36,7 +36,7 @@ class RecordManager : public QThread
     void checkSize(const QString &result);
     void delOldestFile();
     void getAllFileName(QString path, QVector<QString> &path_vec);
-    void delAllFiles();
+
     QByteArray HexStringToByteArray(QString HexString);
     void creatNewFile(QString date, QString time);
     void newfile(QString date, QString time);

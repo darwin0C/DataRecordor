@@ -128,7 +128,7 @@ void QMyCom::comDataHandle()
         }
         SerialDataRev stFromOPCData;
         m_rxBuf->Get(&stFromOPCData,MinPacketLength);
-        gMutex.lock();
+        gMutex.tryLock(200);
         SerialDataQune.enqueue(stFromOPCData);
         gMutex.unlock();
         //emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);

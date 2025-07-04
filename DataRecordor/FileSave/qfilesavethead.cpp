@@ -59,16 +59,12 @@ void QFileSaveThread::onFlushTimeout()
     }
 
     static quint64 lastProd = 0, lastCons = 0;
-
     quint64 p = prodBytes.load();
     quint64 c = consBytes.load();
-
     int deltaP  = int(p - lastProd);
     int deltaC  = int(c - lastCons);
-
     lastProd = p;
     lastCons = c;
-
     qDebug().nospace()
             << "[STAT] prod " << deltaP / 1024 << " KiB/s  "
             << "cons "       << deltaC / 1024 << " KiB/s  ";
@@ -172,7 +168,7 @@ void QFileSaveThread::run()
     int bufferUsed = 0;
     while (!m_bStop) {
         // 当前 writeBuffer 已用字节
-        gMutex.lock();
+        gMutex.tryLock(200);
         while(!SerialDataQune.empty() && bufferUsed<(CHUNK-1024))
         {
             loopCount++;
