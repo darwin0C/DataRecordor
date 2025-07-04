@@ -13,6 +13,7 @@ const QString GlobSettingFile="/settings/setting.ini" ; //总线协议
 
 #ifdef LINUX_MODE
 const QString gPath="/run/media/mmcblk0p1/data/";
+//const QString gPath="/run/media/mmcblk0/data/";
 #else
 const QString gPath="D:/run/data/";
 #endif
