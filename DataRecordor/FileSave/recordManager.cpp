@@ -75,6 +75,7 @@ void RecordManager::checkTime(QString date,QString time)
     if (isSDCardOK && revTime.length() >= 2)
         creatNewFile(revDate, revTime);
 }
+
 RecordManager::~RecordManager()
 {
 
@@ -295,7 +296,7 @@ void RecordManager::onCheckFileExists()
 {
     // 定时检查：若文件被删除，则重建同名文件
     if (!gCurrentfileName.isEmpty() && !QFile::exists(gCurrentfileName)) {
-        QMutexLocker locker(&fileMutex);
+        //QMutexLocker locker(&fileMutex);
         newfile(currentDate, currentTime);
     }
 }
