@@ -59,6 +59,7 @@ private:
     void sendtestData();
     void Test();
     void startcpuMonitor();
+    QDateTime getBuildDateTime();
 signals:
     void sendCanData(CanDataBody);
     void delAllFilesSig();

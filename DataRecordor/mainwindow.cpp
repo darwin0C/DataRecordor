@@ -8,6 +8,13 @@ QQueue<SerialDataRev> SerialDataQune;
 QMutex gMutex;
 bool SDCardStatus=true;
 int ledBlankTimes = 0;
+
+
+
+// 全局常量，编译时由编译器插入当日日期和时间
+const QString BUILD_DATE = QStringLiteral(__DATE__);  // 格式如 "Jul 18 2025"
+const QString BUILD_TIME = QStringLiteral(__TIME__);  // 格式如 "16:23:45"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -29,6 +36,18 @@ MainWindow::MainWindow(QWidget *parent)
     connect(MsgSignals::getInstance(),&MsgSignals::sendLEDStatSig,this,&MainWindow::changeLEDStat);
     //Test();
     //startcpuMonitor();
+    QString versiontime =getBuildDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    qDebug()<<"SoftVer:"<<versiontime;
+}
+QDateTime MainWindow::getBuildDateTime()
+{
+    QString dtStr = QString("%1 %2")
+            .arg(BUILD_DATE.simplified())   // 去掉多余空格，变成 "Jul 18 2025"
+            .arg(BUILD_TIME);               // "Jul 18 2025 16:23:45"
+
+    // 使用 C 语言环境（英语）解析“MMM d yyyy hh:mm:ss”
+    QLocale locale(QLocale::C);
+    return  locale.toDateTime(dtStr, "MMM d yyyy hh:mm:ss");
 }
 void MainWindow::startcpuMonitor()
 {

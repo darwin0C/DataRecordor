@@ -28,11 +28,47 @@ DbManipulation::~DbManipulation()
 }
 //初始化数据库
 void DbManipulation::initial(QString path){
-    if(QSqlDatabase::contains("qt_sql_default_connection"))
-        database = QSqlDatabase::database("qt_sql_default_connection");
-    else
-        database = QSqlDatabase::addDatabase("QSQLITE");
-    database.setDatabaseName(path);
+//    if(QSqlDatabase::contains("qt_sql_default_connection"))
+//        database = QSqlDatabase::database("qt_sql_default_connection");
+//    else
+//        database = QSqlDatabase::addDatabase("QSQLITE");
+//    database.setDatabaseName(path);
+
+
+    // 1. 确保数据库文件所在目录存在
+       QFileInfo dbFileInfo(path);
+       QDir dbDir = dbFileInfo.absoluteDir();
+       if (!dbDir.exists()) {
+           if (!dbDir.mkpath(".")) {
+               qWarning() << "Failed to create directory:" << dbDir.absolutePath();
+               return;
+           }
+       }
+
+       // 2. 判断数据库文件是否已存在
+       const bool needCreate = !QFile::exists(path);
+
+       // 3. 准备 QSQLITE 连接
+       if (QSqlDatabase::contains("qt_sql_default_connection")) {
+           database = QSqlDatabase::database("qt_sql_default_connection");
+       } else {
+           database = QSqlDatabase::addDatabase("QSQLITE", "qt_sql_default_connection");
+       }
+       database.setDatabaseName(path);
+
+       // 4. 如果文件不存在，先打开并立即关闭，让 SQLite 创建空文件
+       if (needCreate) {
+           if (!database.open()) {
+               qWarning() << "Failed to create database file:"
+                          << database.lastError().text();
+               return;
+           }
+           database.close();
+       }
+
+
+
+
     dbMap.clear();
 
     dbMap[DB_Equ_Name]=("Equ_Name");

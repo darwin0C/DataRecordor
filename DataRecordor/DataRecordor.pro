@@ -34,7 +34,7 @@ HEADERS += \
 FORMS += \
     mainwindow.ui
 
-#DEFINES += LINUX_MODE
+DEFINES += LINUX_MODE
 
 #DEFINES += TEST_MODE
 
