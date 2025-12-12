@@ -10,7 +10,7 @@ RecordManager::RecordManager()
 {
     connect(MsgSignals::getInstance(),&MsgSignals::sendCheckDiskSig,this,&RecordManager::onCheckDisk);
     checkTmr = new QTimer(this);
-    checkTmr->setInterval(10*1000);        // 10 s 足够
+    checkTmr->setInterval(10*1000); // 10 s 足够
     connect(checkTmr, &QTimer::timeout, this, &RecordManager::onCheckDisk);
     checkTmr->start();
     // 定时检查当前文件存在性
