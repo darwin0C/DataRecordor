@@ -166,26 +166,35 @@ void QFileSaveThread::run()
     //int bytesWritten=0;
     int loopCount=0;
     int bufferUsed = 0;
+    qDebug() << "[QFileSaveThread] Run loop started. Thread:" << (quint64)QThread::currentThreadId();
     while (!m_bStop) {
         // 当前 writeBuffer 已用字节
-        gMutex.tryLock(200);
-        while(!SerialDataQune.empty() && bufferUsed<(CHUNK-1024))
-        {
-            loopCount++;
-            QByteArray line = packSerial(SerialDataQune.dequeue());
-            int  len  = line.size();
-            if(len>1024)
+        if (gMutex.tryLock(200)) {
+            while(!SerialDataQune.empty() && bufferUsed<(CHUNK-1024))
             {
-                qDebug()<<"error,lose Data"<<line.toHex();
-                break;
-            }
-            // 复制到缓存
+                loopCount++;
+                QByteArray line = packSerial(SerialDataQune.dequeue());
+                int  len  = line.size();
+                if(len>1024)
+                {
+                    qDebug()<<"error,lose Data"<<line.toHex();
+                    break;
+                }
+                // 复制到缓存
 
-            memcpy(writeBuffer + bufferUsed, line.constData(), len);
-            bufferUsed += len;
-            prodBytes += len;
+                memcpy(writeBuffer + bufferUsed, line.constData(), len);
+                bufferUsed += len;
+                prodBytes += len;
+            }
+            gMutex.unlock();
         }
-        gMutex.unlock();
+        else {
+            // [DEBUG] 如果这里频繁出现，说明发生了竞争导致性能下降，甚至可能死锁
+            qWarning() << "[SaveThread] !!! Lock Failed (Timeout) !!! Potential Deadlock or Contention.";
+            QThread::msleep(5); // 避让，防止死循环卡死 CPU
+            continue; // 跳过本次循环
+        }
+
         //qDebug()<<"loopCount :"<<loopCount;
         if (m_bStop) break;
 

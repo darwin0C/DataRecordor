@@ -212,6 +212,9 @@ void RecordManager::creatNewFile(QString date,QString time)
 }
 void RecordManager::newfile(QString date,QString time)
 {
+    // [DEBUG] 进入函数，打印参数
+    qDebug() << "[RecordManager] newfile Enter. Date:" << date << " Time:" << time
+             << " Thread:" << (quint64)QThread::currentThreadId();
     QMutexLocker locker(&fileMutex);    // 保证与其它文件操作互斥
     QString fileDir=gPath+"ebd_"+date.replace(4,1,'_');
     QDir dir;
@@ -231,6 +234,8 @@ void RecordManager::newfile(QString date,QString time)
     gCurrentfileName = candidate.fileName();
 
     emit creatFileSig(gCurrentfileName);
+
+    qDebug() << "[RecordManager] Emitting signal: " << gCurrentfileName;
     //process->start("df -k");
 }
 
