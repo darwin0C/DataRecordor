@@ -13,12 +13,15 @@ QTCQueue::QTCQueue(unsigned int iSize )
     //队列指针初始化
     m_iRead=0;
     m_iWrite=0;
-//	::InitializeCriticalSection( &this->m_Lock );
+    //	::InitializeCriticalSection( &this->m_Lock );
 }
 //析构函数
 QTCQueue::~QTCQueue()
 {
-  delete  this->m_sBuffer;
+    if (this->m_sBuffer) {
+        delete[] this->m_sBuffer; // 必须加 []
+        this->m_sBuffer = nullptr;
+    }
 }
 //清空队列
 void QTCQueue::Empty()
@@ -35,11 +38,11 @@ void QTCQueue::Empty()
 void QTCQueue::MoveReadP(unsigned int iSteps)
 {
     //::EnterCriticalSection( &this->m_Lock );
-        m_Lock.lock();
-        this->m_iRead += iSteps;
-        this->m_iRead %= m_iMaxSize;
+    m_Lock.lock();
+    this->m_iRead += iSteps;
+    this->m_iRead %= m_iMaxSize;
     //::LeaveCriticalSection( &this->m_Lock );
-        m_Lock.unlock();
+    m_Lock.unlock();
 }
 
 //----------------------------------------
@@ -48,8 +51,8 @@ void QTCQueue::MoveWriteP(unsigned int iSteps)
 {
     //::EnterCriticalSection( &this->m_Lock );
     m_Lock.lock();
-        this->m_iWrite += iSteps;
-        this->m_iWrite %= m_iMaxSize;
+    this->m_iWrite += iSteps;
+    this->m_iWrite %= m_iMaxSize;
     //::LeaveCriticalSection( &this->m_Lock );
     m_Lock.unlock();
 }
@@ -60,7 +63,7 @@ void QTCQueue::MoveWriteP(unsigned int iSteps)
 int QTCQueue::InUseCount()
 {
     m_Lock.lock();
-        int iSize = (m_iWrite - m_iRead + m_iMaxSize) % m_iMaxSize;
+    int iSize = (m_iWrite - m_iRead + m_iMaxSize) % m_iMaxSize;
     m_Lock.unlock();
     return iSize;
 }
@@ -72,7 +75,7 @@ int QTCQueue::FreeCount()
     //::EnterCriticalSection( &this->m_Lock );
     int a=InUseCount();
     m_Lock.lock();
-        int iSize = m_iMaxSize-a-1;
+    int iSize = m_iMaxSize-a-1;
     //::LeaveCriticalSection( &this->m_Lock );
     m_Lock.unlock();
     return ( (iSize>0) ? iSize : 0 );
@@ -89,11 +92,11 @@ int QTCQueue::Add(char c)
     if( FreeCount()<=0 )	return -1;
     //::EnterCriticalSection( &this->m_Lock );
     m_Lock.lock();
-        //插入字符
-        m_sBuffer[m_iWrite] = c;
-        //移动写指针
-        this->m_iWrite += 1;
-        this->m_iWrite %= m_iMaxSize;
+    //插入字符
+    m_sBuffer[m_iWrite] = c;
+    //移动写指针
+    this->m_iWrite += 1;
+    this->m_iWrite %= m_iMaxSize;
     //::LeaveCriticalSection( &this->m_Lock );
     m_Lock.unlock();
     return 1;				//不检测是否满(因为空/满情况下，都是iWrite==iRead)
@@ -110,22 +113,22 @@ int QTCQueue::Add(void *buf,int iLen)
     if( iLen<=0 )			return -1;
     //插入数据
     if( FreeCount()< iLen )
-  return -1;
+        return -1;
 
     //::EnterCriticalSection( &this->m_Lock );
     m_Lock.lock();
-        //求分割点
-        int iDiv = m_iMaxSize - m_iWrite;
-        //插入数据
-        if( m_iWrite+iLen <= (m_iMaxSize-1) )
-            memcpy( (char *)m_sBuffer + m_iWrite, (char *)buf, iLen );
-        else{
-            memcpy( (char *)m_sBuffer + m_iWrite, (char *)buf, iDiv );
-            memcpy( (char *)m_sBuffer, (char *)buf + iDiv, iLen - iDiv );
-        }
-        //移动指针
-        this->m_iWrite += iLen;
-        this->m_iWrite %= m_iMaxSize;
+    //求分割点
+    int iDiv = m_iMaxSize - m_iWrite;
+    //插入数据
+    if( m_iWrite+iLen <= (m_iMaxSize-1) )
+        memcpy( (char *)m_sBuffer + m_iWrite, (char *)buf, iLen );
+    else{
+        memcpy( (char *)m_sBuffer + m_iWrite, (char *)buf, iDiv );
+        memcpy( (char *)m_sBuffer, (char *)buf + iDiv, iLen - iDiv );
+    }
+    //移动指针
+    this->m_iWrite += iLen;
+    this->m_iWrite %= m_iMaxSize;
     //::LeaveCriticalSection( &this->m_Lock );
     m_Lock.unlock();
     return iLen;
@@ -142,11 +145,11 @@ int QTCQueue::Get()
 
     //::EnterCriticalSection( &this->m_Lock );
     m_Lock.lock();
-        //取字符
-        c = m_sBuffer[m_iRead];
-        //移动读指针
-        this->m_iRead += 1;
-        this->m_iRead %= m_iMaxSize;
+    //取字符
+    c = m_sBuffer[m_iRead];
+    //移动读指针
+    this->m_iRead += 1;
+    this->m_iRead %= m_iMaxSize;
     //::LeaveCriticalSection( &this->m_Lock );
     m_Lock.unlock();
 
@@ -197,8 +200,8 @@ int QTCQueue::Peek()
 
     //::EnterCriticalSection( &this->m_Lock );
     m_Lock.lock();
-        //取字符
-        c = m_sBuffer[m_iRead];
+    //取字符
+    c = m_sBuffer[m_iRead];
     //::LeaveCriticalSection( &this->m_Lock );
     m_Lock.unlock();
 
@@ -221,15 +224,15 @@ int	QTCQueue::Peek(void *buf,int iLen)
 
     //::EnterCriticalSection( &this->m_Lock );
     m_Lock.lock();
-        //求分割点
-        int iDiv = m_iMaxSize - m_iRead;
-        //取数据
-        if( m_iRead+iReadLen<=m_iMaxSize )
-            memcpy( (char *)buf, (char *)(m_sBuffer+m_iRead), iReadLen );
-        else{
-            memcpy( (char *)buf, (char *)(m_sBuffer+m_iRead), iDiv );
-            memcpy( (char *)buf+iDiv, (char *)m_sBuffer, iReadLen-iDiv );
-        }
+    //求分割点
+    int iDiv = m_iMaxSize - m_iRead;
+    //取数据
+    if( m_iRead+iReadLen<=m_iMaxSize )
+        memcpy( (char *)buf, (char *)(m_sBuffer+m_iRead), iReadLen );
+    else{
+        memcpy( (char *)buf, (char *)(m_sBuffer+m_iRead), iDiv );
+        memcpy( (char *)buf+iDiv, (char *)m_sBuffer, iReadLen-iDiv );
+    }
     //::LeaveCriticalSection( &this->m_Lock );
     m_Lock.unlock();
     return iReadLen;

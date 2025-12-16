@@ -3,6 +3,7 @@
 #include "MsgSignals.h"
 #include <QDirIterator>
 #include <QFileInfo>
+#include <QtConcurrent> //
 #ifdef LINUX_MODE
 #include <sys/statvfs.h>
 #endif
@@ -346,13 +347,27 @@ QByteArray RecordManager::HexStringToByteArray(QString HexString)
 void RecordManager::SetSysTime(QString date,QString time)
 {
 #ifdef LINUX_MODE
-    QString str = "date -s "+date;
-    qDebug()<<"time set"<<str;
-    system(str.toLatin1().data());
-    str = "date -s "+time;
-    system(str.toLatin1().data());
-    //强制写入到CMOS
-    //system("clock -w");
-    isTimeSet=true;
+    // 使用 QtConcurrent::run 将耗时操作移入后台线程
+    // 注意：必须按值传递参数 (QString date, QString time)，确保线程安全
+    QtConcurrent::run([date, time](){
+
+        qDebug() << "[TimeSync] Background thread starting set time:" << date << time;
+
+        // 拼接命令
+        QString cmdDate = QString("date -s \"%1\"").arg(date);
+        QString cmdTime = QString("date -s \"%1\"").arg(time);
+
+        // 执行阻塞操作 (现在只会阻塞后台线程，不会阻塞数据接收)
+        system(cmdDate.toLatin1().constData());
+        system(cmdTime.toLatin1().constData());
+
+        // 同步到硬件时钟 (防止重启失效)
+        system("hwclock -w");
+
+        qDebug() << "[TimeSync] Done.";
+    });
+
+    // 标记时间已设置 (主线程变量，注意：这里只是置标志，逻辑上没问题)
+    isTimeSet = true;
 #endif
 }

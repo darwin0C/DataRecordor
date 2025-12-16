@@ -40,7 +40,7 @@ unix{
 }
 
 
-#DEFINES += TEST_MODE
+DEFINES += TEST_MODE
 
 
 # Default rules for deployment.
