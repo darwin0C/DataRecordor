@@ -4,6 +4,7 @@
 #include "MsgSignals.h"
 #include <QQueue>
 #include <QMutex>
+#include "versionutil.h" // 引入头文件
 QQueue<SerialDataRev> SerialDataQune;
 QMutex gMutex;
 bool SDCardStatus=true;
@@ -38,7 +39,10 @@ MainWindow::MainWindow(QWidget *parent)
     //startcpuMonitor();
     QString versiontime =getBuildDateTime().toString("yyyy-MM-dd HH:mm:ss");
     qDebug()<<"SoftVer:"<<versiontime;
+    // --- 一行代码搞定版本管理 ---
+    VersionUtil::checkAndUpdate(gPath);
 }
+
 QDateTime MainWindow::getBuildDateTime()
 {
     QString dtStr = QString("%1 %2")

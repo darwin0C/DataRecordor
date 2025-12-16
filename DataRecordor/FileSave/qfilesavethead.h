@@ -17,6 +17,9 @@ class QFileSaveThread : public QThread
     std::atomic<quint64> prodBytes  {0};   // 总生产字节
     std::atomic<quint64> consBytes  {0};   // 总消费字节
     std::atomic<int>     ringUsage  {0};   // 上一次打印时 ring 已用
+    std::atomic<bool> m_needNewFile {false}; // 标志位
+    QString m_nextFileName;
+    QMutex m_nameMutex; // 保护 m_nextFileName
 public:
     explicit QFileSaveThread(QObject *parent = NULL);
     ~QFileSaveThread();
@@ -38,7 +41,7 @@ private:
     QMutex    m_mutexOverflow;
     //QByteArray m_overflow;
     double cpuUsedpercent=0;
-    QTimer *m_flushTimer;
+    //QTimer *m_flushTimer;
     QByteArray packSerial(const SerialDataRev &serialData);
 public:
     bool CreatFile(QString qsFilePath); //打开文件

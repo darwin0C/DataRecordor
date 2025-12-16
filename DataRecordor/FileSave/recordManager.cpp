@@ -65,6 +65,23 @@ void RecordManager::checkTime(QString date,QString time)
         return;                         // 早退，减小临界区
 
 #ifdef LINUX_MODE
+    // --- 新增：计算时间差，避免频繁设置 ---
+    QString dateTimeStr = date + " " + time; // 格式: "yyyy_MMdd HH:mm:ss.zzz"
+    QDateTime targetTime = QDateTime::fromString(dateTimeStr, "yyyy_MMdd HH:mm:ss.zzz");
+
+    bool needUpdate = true;
+    if (targetTime.isValid()) {
+        QDateTime currentSysTime = QDateTime::currentDateTime();
+        qint64 diff = std::abs(currentSysTime.secsTo(targetTime));
+
+        // 阈值设为 5 秒
+        if (diff < 5) {
+            needUpdate = false;
+        } else {
+            qDebug() << "[TimeSync] Drift:" << diff << "s. Updating...";
+        }
+    }
+
     SetSysTime(date.left(4) + "-" + date.mid(5,2) + "-" + date.right(2),
                time.left(8));
 #endif
@@ -200,43 +217,63 @@ void RecordManager::getAllFileName(QString path, QVector<QString> &path_vec)
 
 void RecordManager::creatNewFile(QString date,QString time)
 {
-    //qDebug()<<"<<<<<<<<<creatNewFile=========";
-    //QFileInfo currntFile(gCurrentfileName);
-    if(date!=currentDate || time!=currentTime/*||!currntFile.exists()*/)
+    QString nameToEmit; // 用于存储文件名，以便在锁外发射
     {
-        isTimeSet=false;
-        currentDate=date;
-        currentTime=time;
-        newfile(date,time);
+        QMutexLocker locker(&fileMutex);
+        if (date != currentDate || time != currentTime)
+        {
+            isTimeSet = false;
+            newfileInternal(date, time);
+            nameToEmit = gCurrentfileName;
+        }
+    }
+    if (!nameToEmit.isEmpty()) {
+        qDebug() << "[RecordManager] Switching file to:" << nameToEmit;
+        emit creatFileSig(nameToEmit);
     }
 }
-void RecordManager::newfile(QString date,QString time)
+void RecordManager::newfileInternal(QString date, QString time)
 {
-    // [DEBUG] 进入函数，打印参数
-    qDebug() << "[RecordManager] newfile Enter. Date:" << date << " Time:" << time
-             << " Thread:" << (quint64)QThread::currentThreadId();
-    QMutexLocker locker(&fileMutex);    // 保证与其它文件操作互斥
-    QString fileDir=gPath+"ebd_"+date.replace(4,1,'_');
+    currentDate = date;
+    currentTime = time;
+    // 1. 路径与目录逻辑
+    QString fileDir = gPath + "ebd_" + date.replace(4, 1, '_');
     QDir dir;
-    if (!dir.exists(fileDir))
-    {
+    if (!dir.exists(fileDir)) {
         dir.mkpath(fileDir);
     }
-    // QString dirPath=fileDir+"/ebd_can_"+time.left(2);
-    //qDebug()<<"<<<<<<<<<fileName="<<dirPath;
-
-    //static int index=0;
+    // 2. 生成文件名
     QString base = fileDir + "/ebd_can_" + time.left(2);
     QFile candidate(base + ".txt");
-    //    while (candidate.exists()) {
-    //        candidate.setFileName(base + '_' + QString::number(++index) + ".txt");
-    //    }
+    // 3. 更新成员变量 (此时处于 caller 的锁保护下)
     gCurrentfileName = candidate.fileName();
+    qDebug() << "[RecordManager] Internal created path:" << gCurrentfileName;
+}
+void RecordManager::newfile(QString date, QString time)
+{
+    qDebug() << "[RecordManager] newfile Enter. Thread:" << (quint64)QThread::currentThreadId();
 
-    emit creatFileSig(gCurrentfileName);
+    QString nameToEmit; // 用于保存需要发射的文件名
 
-    qDebug() << "[RecordManager] Emitting signal: " << gCurrentfileName;
-    //process->start("df -k");
+    // --- 临界区开始 ---
+    {
+        QMutexLocker locker(&fileMutex); // 获取锁
+
+        // 调用内部实现 (此时已持有锁，安全)
+        newfileInternal(date, time);
+
+        // 在锁内拷贝文件名到局部变量
+        nameToEmit = gCurrentfileName;
+
+    } // --- 临界区结束 ---
+    // locker 离开作用域，fileMutex 自动解锁
+
+    // --- 锁外发射信号 ---
+    // 此时已经没有持有锁，无论槽函数做什么，都不会导致死锁
+    if (!nameToEmit.isEmpty()) {
+        qDebug() << "[RecordManager] Emitting signal (Safe): " << nameToEmit;
+        emit creatFileSig(nameToEmit);
+    }
 }
 
 void RecordManager::onCheckDisk()
@@ -299,10 +336,19 @@ void RecordManager::onCheckDisk()
 
 void RecordManager::onCheckFileExists()
 {
-    // 定时检查：若文件被删除，则重建同名文件
-    if (!gCurrentfileName.isEmpty() && !QFile::exists(gCurrentfileName)) {
-        //QMutexLocker locker(&fileMutex);
-        newfile(currentDate, currentTime);
+    QString nameToEmit; // 用于保存需要发射的文件名
+    {
+        QMutexLocker locker(&fileMutex); // 获取锁
+        // 检查文件是否存在
+        if (!gCurrentfileName.isEmpty() && !QFile::exists(gCurrentfileName)) {
+            qDebug() << "[RecordManager] File missing, recreating...";
+            newfileInternal(currentDate, currentTime);
+            nameToEmit = gCurrentfileName;
+        }
+    } // --- 临界区结束，解锁 ---
+    if (!nameToEmit.isEmpty()) {
+        qDebug() << "[RecordManager] Emitting signal (Safe, Recreated): " << nameToEmit;
+        emit creatFileSig(nameToEmit);
     }
 }
 QByteArray RecordManager::HexStringToByteArray(QString HexString)

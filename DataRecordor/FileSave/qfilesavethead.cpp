@@ -24,12 +24,12 @@ QFileSaveThread::QFileSaveThread(QObject *parent)
 
     writeBuffer=new char[CHUNK];
     /* ---------- 新增定时器：定期 flush ---------- */
-    m_flushTimer = new QTimer(this);                     // 由 QThread 对象托管
-    m_flushTimer->setInterval(1000);               // 10 s 一次
-    connect(m_flushTimer, &QTimer::timeout,
-            this,          &QFileSaveThread::onFlushTimeout,
-            Qt::QueuedConnection);                      // 保证跨线程安全
-    m_flushTimer->start();
+    //    m_flushTimer = new QTimer(this);                     // 由 QThread 对象托管
+    //    m_flushTimer->setInterval(1000);               // 10 s 一次
+    //    connect(m_flushTimer, &QTimer::timeout,
+    //            this,          &QFileSaveThread::onFlushTimeout,
+    //            Qt::QueuedConnection);                      // 保证跨线程安全
+    //    m_flushTimer->start();
     /* ------------------------------------------------*/
 }
 
@@ -39,7 +39,12 @@ QFileSaveThread::~QFileSaveThread()
     wait();             // 等 run() 退出
     CloseFile();
     delete[] writeBuffer;
-    delete recordManager;
+    if (recordManager) {
+        recordManager->quit(); // 请求退出事件循环
+        recordManager->wait(); // 等待线程真正结束
+        delete recordManager;
+        recordManager = nullptr;
+    }
 }
 /* ----------------- 定时 flush 槽 ----------------- */
 void QFileSaveThread::onFlushTimeout()
@@ -85,8 +90,11 @@ void QFileSaveThread::stopRecord()
 
 void QFileSaveThread::onCreatNewFile(QString fileName)
 {
-    CloseFile();
-    CreatFile(fileName);
+    QMutexLocker lock(&m_nameMutex);
+    m_nextFileName = fileName;
+    m_needNewFile = true; // 通知 run() 循环
+    //    CloseFile();
+    //    CreatFile(fileName);
 }
 
 void QFileSaveThread::onRevCpuinfo(double usedPer)
@@ -168,6 +176,20 @@ void QFileSaveThread::run()
     int bufferUsed = 0;
     qDebug() << "[QFileSaveThread] Run loop started. Thread:" << (quint64)QThread::currentThreadId();
     while (!m_bStop) {
+        // --- 1. 检查是否需要切换文件 ---
+        if (m_needNewFile) {
+            // 安全：这里是工作线程，且没有持有 gMutex 或 m_mutex
+            CloseFile(); // 此时 CloseFile 必须只在内部调用
+
+            QString newName;
+            {
+                QMutexLocker lock(&m_nameMutex);
+                newName = m_nextFileName;
+            }
+            CreatFile(newName); // 此时 CreatFile 必须只在内部调用
+
+            m_needNewFile = false;
+        }
         // 当前 writeBuffer 已用字节
         if (gMutex.tryLock(200)) {
             while(!SerialDataQune.empty() && bufferUsed<(CHUNK-1024))
@@ -199,9 +221,9 @@ void QFileSaveThread::run()
         if (m_bStop) break;
 
         /* ---------- 满足阈值就落盘 ---------- */
-        if (bufferUsed >= WRITEBYTE && m_file.isOpen()) {
+        if (bufferUsed >= WRITEBYTE /*&& m_file.isOpen()*/) {
             QMutexLocker fl(&m_mutex);
-            if(sdCardStat())
+            if(sdCardStat()&&m_file.isOpen())
                 m_file.write(writeBuffer, bufferUsed);
             consBytes += bufferUsed;
             bufferUsed = 0;
@@ -212,7 +234,12 @@ void QFileSaveThread::run()
             if (bufferUsed > 0 && m_file.isOpen()) {
                 QMutexLocker fl(&m_mutex);
                 if(sdCardStat())
-                    m_file.write(writeBuffer, bufferUsed);
+                {
+                    qint64 written = m_file.write(writeBuffer, bufferUsed);
+                    if (written == -1) {
+                        qCritical() << "[SaveThread] File Write Error:" << m_file.errorString();
+                    }
+                }
                 consBytes += bufferUsed;
                 bufferUsed = 0;
             }
