@@ -61,8 +61,15 @@ QString RecordManager::getRecordData(const SerialDataRev &dataRev)
 void RecordManager::checkTime(QString date,QString time)
 {
 
+#ifdef TEST_MODE
+    if (date == revDate && time.left(5) == revTime)
+        return;                         // 早退，减小临界区
+
+#elif
     if (date == revDate && time.left(2) == revTime)
         return;                         // 早退，减小临界区
+
+#endif
 
 #ifdef LINUX_MODE
     // --- 新增：计算时间差，避免频繁设置 ---
@@ -87,7 +94,11 @@ void RecordManager::checkTime(QString date,QString time)
 #endif
 
     revDate = date;
+#ifdef TEST_MODE
+    revTime = time.left(5);
+#elif
     revTime = time.left(2);
+#endif
 
     if (isSDCardOK && revTime.length() >= 2)
         creatNewFile(revDate, revTime);
@@ -137,10 +148,6 @@ void RecordManager::checkSize(const QString &result)
     {
         delOldestFile();
     }
-    //    if(diskFree<diskMinFree-100*1024)
-    //    {
-    //        process->start("df -k");
-    //    }
 }
 QString RecordManager::findOldestFile() const
 {
@@ -158,27 +165,6 @@ QString RecordManager::findOldestFile() const
 }
 void RecordManager::delOldestFile(void)
 {
-    //    QVector<QString> path_vec;
-    //    path_vec.clear();
-    //    getAllFileName(gPath,path_vec);
-    //    QString filename="";
-    //    if(path_vec.count()>0)
-    //    {
-    //        QFileInfo fileInfo_server(path_vec[0]);
-    //        QDateTime tempModifiedTime=fileInfo_server.lastModified().toLocalTime();
-    //        filename=path_vec[0];
-    //        //QVector<QString>::iterator iter;
-    //        for (auto iter=path_vec.begin();iter!=path_vec.end();iter++)
-    //        {
-    //            QFileInfo fileInfo_server(*iter);
-    //            QDateTime lastModifiedTime =fileInfo_server.lastModified().toLocalTime();
-    //            if(lastModifiedTime<tempModifiedTime)
-    //            {
-    //                tempModifiedTime=lastModifiedTime;
-    //                filename=*iter;
-    //            }
-    //        }
-    //    }
     QString filename=findOldestFile();
     if(filename!="")
     {
@@ -243,7 +229,11 @@ void RecordManager::newfileInternal(QString date, QString time)
         dir.mkpath(fileDir);
     }
     // 2. 生成文件名
+#ifdef TEST_MODE
+    QString base = fileDir + "/ebd_can_" + time.left(5).replace(':','_');
+#elif
     QString base = fileDir + "/ebd_can_" + time.left(2);
+#endif
     QFile candidate(base + ".txt");
     // 3. 更新成员变量 (此时处于 caller 的锁保护下)
     gCurrentfileName = candidate.fileName();
@@ -254,22 +244,11 @@ void RecordManager::newfile(QString date, QString time)
     qDebug() << "[RecordManager] newfile Enter. Thread:" << (quint64)QThread::currentThreadId();
 
     QString nameToEmit; // 用于保存需要发射的文件名
-
-    // --- 临界区开始 ---
     {
         QMutexLocker locker(&fileMutex); // 获取锁
-
-        // 调用内部实现 (此时已持有锁，安全)
         newfileInternal(date, time);
-
-        // 在锁内拷贝文件名到局部变量
         nameToEmit = gCurrentfileName;
-
     } // --- 临界区结束 ---
-    // locker 离开作用域，fileMutex 自动解锁
-
-    // --- 锁外发射信号 ---
-    // 此时已经没有持有锁，无论槽函数做什么，都不会导致死锁
     if (!nameToEmit.isEmpty()) {
         qDebug() << "[RecordManager] Emitting signal (Safe): " << nameToEmit;
         emit creatFileSig(nameToEmit);
