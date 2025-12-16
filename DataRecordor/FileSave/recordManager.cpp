@@ -65,10 +65,9 @@ void RecordManager::checkTime(QString date,QString time)
     if (date == revDate && time.left(5) == revTime)
         return;                         // 早退，减小临界区
 
-#elif
+#else
     if (date == revDate && time.left(2) == revTime)
         return;                         // 早退，减小临界区
-
 #endif
 
 #ifdef LINUX_MODE
@@ -96,7 +95,7 @@ void RecordManager::checkTime(QString date,QString time)
     revDate = date;
 #ifdef TEST_MODE
     revTime = time.left(5);
-#elif
+#else
     revTime = time.left(2);
 #endif
 
@@ -231,7 +230,7 @@ void RecordManager::newfileInternal(QString date, QString time)
     // 2. 生成文件名
 #ifdef TEST_MODE
     QString base = fileDir + "/ebd_can_" + time.left(5).replace(':','_');
-#elif
+#else
     QString base = fileDir + "/ebd_can_" + time.left(2);
 #endif
     QFile candidate(base + ".txt");
