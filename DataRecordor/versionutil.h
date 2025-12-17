@@ -35,8 +35,8 @@ public:
     }
 
     // 核心管理函数：检查并更新版本文件
-    static void checkAndUpdate(const QString &dirPath) {
-        QString currentVer = getCompileVersion();
+    static void checkAndUpdate(const QString &dirPath,QString softVer) {
+        QString currentVer = softVer+getCompileVersion();
 
         QDir dir(dirPath);
         // 如果目录不存在，尝试创建

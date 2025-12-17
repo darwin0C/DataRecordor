@@ -362,7 +362,7 @@ void RecordManager::SetSysTime(QString date,QString time)
         system(cmdTime.toLatin1().constData());
 
         // 同步到硬件时钟 (防止重启失效)
-        system("hwclock -w");
+        //system("hwclock -w");
 
         qDebug() << "[TimeSync] Done.";
     });
