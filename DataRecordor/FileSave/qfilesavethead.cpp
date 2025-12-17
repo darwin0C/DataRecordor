@@ -5,6 +5,7 @@
 #include <QTimer>
 #include "MsgSignals.h"
 #include <unistd.h>
+#include <sys/stat.h>
 #include <QQueue>
 extern QQueue<SerialDataRev> SerialDataQune;
 extern QMutex gMutex;
@@ -21,16 +22,7 @@ QFileSaveThread::QFileSaveThread(QObject *parent)
     connect(recordManager,&RecordManager::creatFileSig,this,&QFileSaveThread::onCreatNewFile);
     recordManager->start();
     // 每100ms 将大缓存数据搬入小缓冲
-
     writeBuffer=new char[CHUNK];
-    /* ---------- 新增定时器：定期 flush ---------- */
-    //    m_flushTimer = new QTimer(this);                     // 由 QThread 对象托管
-    //    m_flushTimer->setInterval(1000);               // 10 s 一次
-    //    connect(m_flushTimer, &QTimer::timeout,
-    //            this,          &QFileSaveThread::onFlushTimeout,
-    //            Qt::QueuedConnection);                      // 保证跨线程安全
-    //    m_flushTimer->start();
-    /* ------------------------------------------------*/
 }
 
 QFileSaveThread::~QFileSaveThread()
@@ -116,17 +108,6 @@ QByteArray QFileSaveThread::packSerial(const SerialDataRev &serialData)
     return line;                         // 直接返回
 }
 
-void QFileSaveThread::revCANData(CanDataBody canData)
-{
-    if(!m_bStop)
-    {
-        //QString strData=recordManager->getRecordData(canData);
-        //saveStringData(strData);
-    }
-}
-
-
-
 
 void QFileSaveThread::CloseFile()
 {
@@ -167,10 +148,12 @@ bool QFileSaveThread::CreatFile(QString qsFilePath)
 
 void QFileSaveThread::run()
 {
-    const qint64 FLUSH_INTERVAL_MS = 10 * 1000;  // 10秒
+    const qint64 FLUSH_INTERVAL_MS = 5 * 1000;  // 10秒
+    const qint64 CHECK_LINK_INTERVAL = 1000;
     QElapsedTimer timer;
     timer.start();
     qint64 lastFlush = 0;
+    qint64 lastCheckLink = 0;
     //int bytesWritten=0;
     int loopCount=0;
     int bufferUsed = 0;
@@ -230,18 +213,34 @@ void QFileSaveThread::run()
         }
         /* 周期 flush（避免频繁磁盘刷新） */
         qint64 now = timer.elapsed();
-        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
-            if (bufferUsed > 0 && m_file.isOpen()) {
-                QMutexLocker fl(&m_mutex);
-                if(sdCardStat())
-                {
-                    qint64 written = m_file.write(writeBuffer, bufferUsed);
-                    if (written == -1) {
-                        qCritical() << "[SaveThread] File Write Error:" << m_file.errorString();
+        if (m_file.isOpen() && (now - lastCheckLink >= CHECK_LINK_INTERVAL)) {
+            int fd = m_file.handle();
+            if (fd != -1) {
+                struct stat st;
+                // fstat 直接检查文件描述符的状态
+                if (fstat(fd, &st) == 0) {
+                    // st_nlink == 0 表示文件在磁盘上已被删除 (Unlinked)
+                    if (st.st_nlink == 0) {
+                        qWarning() << "[SaveThread] File deleted externally! Recreating...";
+                        CloseFile();
+                        if (!m_qsFilePath.isEmpty()) {
+                            CreatFile(m_qsFilePath);
+                        }
                     }
                 }
-                consBytes += bufferUsed;
-                bufferUsed = 0;
+            }
+            lastCheckLink = now;
+        }
+        if (now - lastFlush >= FLUSH_INTERVAL_MS) {
+            QMutexLocker fl(&m_mutex);
+            if (m_file.isOpen() && sdCardStat()) {
+                // A. 先把 writeBuffer 里剩余的一点点数据写入 OS
+                if (bufferUsed > 0) {
+                    m_file.write(writeBuffer, bufferUsed);
+                    consBytes += bufferUsed;
+                    bufferUsed = 0;
+                }
+                m_file.flush();
             }
             lastFlush = now;
         }

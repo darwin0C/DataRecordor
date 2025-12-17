@@ -39,9 +39,7 @@ private:
     char *writeBuffer;
     // 大缓存区
     QMutex    m_mutexOverflow;
-    //QByteArray m_overflow;
     double cpuUsedpercent=0;
-    //QTimer *m_flushTimer;
     QByteArray packSerial(const SerialDataRev &serialData);
 public:
     bool CreatFile(QString qsFilePath); //打开文件
@@ -54,13 +52,10 @@ public:
     bool sdCardStat();
     void onRevCpuinfo(double usedPer);
 public slots:
-    void revCANData(CanDataBody canData);
     void delAllFiles();
 
 protected:
     virtual void run() override;
-
-
 private slots:
 
     void onCreatNewFile(QString fileName);
