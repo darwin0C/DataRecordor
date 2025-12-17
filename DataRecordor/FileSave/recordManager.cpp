@@ -352,14 +352,9 @@ void RecordManager::SetSysTime(QString date,QString time)
     QtConcurrent::run([date, time](){
 
         qDebug() << "[TimeSync] Background thread starting set time:" << date << time;
-
-        // 拼接命令
-        QString cmdDate = QString("date -s \"%1\"").arg(date);
-        QString cmdTime = QString("date -s \"%1\"").arg(time);
-
-        // 执行阻塞操作 (现在只会阻塞后台线程，不会阻塞数据接收)
-        system(cmdDate.toLatin1().constData());
-        system(cmdTime.toLatin1().constData());
+        // 格式化为 "YYYY-MM-DD HH:MM:SS"
+        QString cmd = QString("date -s \"%1 %2\"").arg(date).arg(time);
+        system(cmd.toLatin1().constData());
 
         // 同步到硬件时钟 (防止重启失效)
         //system("hwclock -w");

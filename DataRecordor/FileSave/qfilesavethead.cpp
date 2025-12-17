@@ -241,6 +241,11 @@ void QFileSaveThread::run()
                     bufferUsed = 0;
                 }
                 m_file.flush();
+                // 2. ★★★ 强制刷入硬件磁盘 (防断电丢失) ★★★
+                int fd = m_file.handle();
+                if (fd != -1) {
+                    fsync(fd);
+                }
             }
             lastFlush = now;
         }
