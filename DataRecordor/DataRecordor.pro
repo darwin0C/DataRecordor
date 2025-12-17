@@ -29,7 +29,8 @@ SOURCES += \
 
 HEADERS += \
     data.h \
-    mainwindow.h
+    mainwindow.h \
+    versionutil.h
 
 FORMS += \
     mainwindow.ui

@@ -128,9 +128,14 @@ void QMyCom::comDataHandle()
         }
         SerialDataRev stFromOPCData;
         m_rxBuf->Get(&stFromOPCData,MinPacketLength);
-        gMutex.tryLock(200);
-        SerialDataQune.enqueue(stFromOPCData);
-        gMutex.unlock();
+
+        if (gMutex.tryLock(200)) {
+            SerialDataQune.enqueue(stFromOPCData);
+            gMutex.unlock();
+        } else {
+            qWarning() << "Failed to lock gMutex in QMyCom, dropping frame!";
+            // 选择丢包或者稍微延时重试，绝对不能强行操作
+        }
         //emit MsgSignals::getInstance()->serialDataSig(stFromOPCData);
         //qDebug() << "emit serialDataSig==========================";
         uint canid=stFromOPCData.candata.dataid;

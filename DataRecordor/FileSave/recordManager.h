@@ -40,10 +40,11 @@ class RecordManager : public QThread
     QByteArray HexStringToByteArray(QString HexString);
     void creatNewFile(QString date, QString time);
     void newfile(QString date, QString time);
-
+    void newfileInternal(QString date, QString time);
     void SetSysTime(QString date, QString time);
     void checkTime(QString date, QString hour);
     QString findOldestFile() const;
+
 public:
     QString getRecordData(const SerialDataRev &dataRev);
     RecordManager();

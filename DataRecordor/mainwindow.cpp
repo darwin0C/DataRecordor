@@ -4,6 +4,7 @@
 #include "MsgSignals.h"
 #include <QQueue>
 #include <QMutex>
+#include "versionutil.h" // 引入头文件
 QQueue<SerialDataRev> SerialDataQune;
 QMutex gMutex;
 bool SDCardStatus=true;
@@ -14,6 +15,7 @@ int ledBlankTimes = 0;
 // 全局常量，编译时由编译器插入当日日期和时间
 const QString BUILD_DATE = QStringLiteral(__DATE__);  // 格式如 "Jul 18 2025"
 const QString BUILD_TIME = QStringLiteral(__TIME__);  // 格式如 "16:23:45"
+const QString gSoftVer="V2.1.0 ";
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -37,8 +39,11 @@ MainWindow::MainWindow(QWidget *parent)
     //Test();
     //startcpuMonitor();
     QString versiontime =getBuildDateTime().toString("yyyy-MM-dd HH:mm:ss");
-    qDebug()<<"SoftVer:"<<versiontime;
+    qDebug()<<"SoftVer:"<<gSoftVer+versiontime;
+    // --- 一行代码搞定版本管理 ---
+    VersionUtil::checkAndUpdate(gPath,gSoftVer);
 }
+
 QDateTime MainWindow::getBuildDateTime()
 {
     QString dtStr = QString("%1 %2")
