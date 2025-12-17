@@ -3,6 +3,7 @@
 #include <QTextStream>
 #include <QRegExp>
 #include <QtGlobal>
+#include <QDebug>
 
 QCpuMonitor::QCpuMonitor(QObject *parent)
     : QObject(parent)
@@ -53,6 +54,7 @@ void QCpuMonitor::onTimeout()
     double usage = 0.0;
     if (dTotal > 0)
         usage = (1.0 - double(dIdle) / double(dTotal)) * 100.0;
+    qDebug()<<"====cpuUsage====:"<<usage;
     emit cpuUsage(usage);
 }
 

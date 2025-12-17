@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 #endif
     QApplication a(argc, argv);
 
-#ifdef TEST_MODE
+
     // 建议：确保 gPath 是绝对路径且在可写分区 (如 /mnt/sdcard/ 或 /tmp/)
     // 假设 data.h 中定义了 gPath
     QString logPath = gPath + "Log/";
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
         // 安装 Qt 消息拦截器
         qInstallMessageHandler(customMessageHandler);
     }
-#endif
+
 
     MainWindow w;
     w.show();

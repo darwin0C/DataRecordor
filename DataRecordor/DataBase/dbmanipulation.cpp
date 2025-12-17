@@ -66,11 +66,7 @@ void DbManipulation::initial(QString path){
            database.close();
        }
 
-
-
-
     dbMap.clear();
-
     dbMap[DB_Equ_Name]=("Equ_Name");
     dbMap[DB_Equ_WorkStat]=("Equ_WorkStat");
     dbMap[DB_Equ_ErrorInfo]=("Equ_ErrorInfo");

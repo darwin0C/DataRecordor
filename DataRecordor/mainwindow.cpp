@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(mp_TCPServer, SIGNAL(newConnection()), this, SLOT(ServerNewConnection()));
     connect(MsgSignals::getInstance(),&MsgSignals::sendLEDStatSig,this,&MainWindow::changeLEDStat);
     //Test();
-    //startcpuMonitor();
+    startcpuMonitor();
     QString versiontime =getBuildDateTime().toString("yyyy-MM-dd HH:mm:ss");
     qDebug()<<"SoftVer:"<<gSoftVer+versiontime;
     // --- 一行代码搞定版本管理 ---
@@ -63,7 +63,7 @@ void MainWindow::startcpuMonitor()
 
     // 线程启动后调用 monitor->start(...)
     connect(cpuThread, &QThread::started, [=]() {
-        monitor->start(50);  //
+        monitor->start(1000*5);  //
     });
 
     // 线程结束后自动 delete monitor 与 delete cpuThread
