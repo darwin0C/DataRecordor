@@ -69,16 +69,6 @@ ComManager::ComManager(QObject *parent) : QObject(parent)
 
 }
 
-//QMyCom *ComManager::startSerial(int index,QString portNum)
-//{
-//    QMyCom *serialCom=new QMyCom(index);
-//    connect(this,&ComManager::sendCanMegSig,serialCom,&QMyCom::sendCanMegSigHandle);
-//    if(serialCom->initComInterface(portNum,921600))
-//    {
-//        serialCom->start();
-//    }
-//    return serialCom;
-//}
 QMyCom* ComManager::startSerial(int index, QString portName)
 {
     auto *worker = new QMyCom(index);
