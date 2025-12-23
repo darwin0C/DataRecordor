@@ -231,19 +231,20 @@ void MainWindow::timerUpdate(void)
 {
     if (m_isUpdateSuccess)
     {
-        ledBlankTimes++;
-        // 在 5 秒内 (100ms * 50 = 5000ms)
-        if (ledBlankTimes <= 50)
+        if (!m_updateTimer.isValid()) {
+            m_updateTimer.start(); // 第一次进入时启动计时
+        }
+        if (m_updateTimer.elapsed() < 5000)
         {
-            // 每一帧(100ms)都调用一次，实现快闪
             blankLED();
+            return; // 跳过后续正常逻辑
         }
         else
         {
             m_isUpdateSuccess = false;
-            ledBlankTimes = 20; // 直接跳到正常闪烁的起始点
+            m_updateTimer.invalidate(); // 失效计时器以备下次使用
+            ledBlankTimes = 20;         // 重置正常闪烁的计数器
         }
-        return; // 处于更新显示阶段时，不执行下方的正常逻辑
     }
 
     // --- 以下是原有的正常运行逻辑 ---
@@ -264,46 +265,56 @@ void MainWindow::timerUpdate(void)
 }
 void MainWindow::blankLED()
 {
-    if(mySaveDataThread == nullptr)
-        return;
+    if(mySaveDataThread == nullptr) return;
 
-    static bool ledon = false;
-    QString ledOnStr = ledGreen_on;
-    QString ledOffStr = led_off;
+    static int updateStep = 0; // 用于更新成功时的四步循环
+    static bool normalLedon = false; // 用于正常运行时的亮灭切换
+
     QString ledBalnkStr;
 
-    // --- 新增：更新成功时的灯光颜色切换 ---
+    // ==========================================
+    // 1. 更新成功模式：红 -> 灭 -> 绿 -> 灭
+    // ==========================================
     if (m_isUpdateSuccess)
     {
-        if (ledon) {
-            ledBalnkStr = ledGreen_on;
-            ledon = false;
-        } else {
-            ledBalnkStr = ledRed_on; // 更新成功：红绿快速交替
-            ledon = true;
+        switch (updateStep % 4) {
+        case 0: ledBalnkStr = ledRed_on;   break; // 红灯
+        case 1: ledBalnkStr = led_off;    break; // 不亮
+        case 2: ledBalnkStr = ledGreen_on; break; // 绿灯
+        case 3: ledBalnkStr = led_off;    break; // 不亮
         }
+        updateStep++;
     }
-    // --- 原有逻辑 ---
-    else if(mySaveDataThread->sdCardStat())
-    {
-        if(mySaveDataThread->diskRemains() < diskMinFree)
-            ledOnStr = ledRed_on;
-        else if(mySaveDataThread->diskUsedPercent() > 70)
-            ledOnStr = ledYellow_on;
-
-        if(ledon) {
-            ledBalnkStr = ledOnStr;
-            ledon = false;
-        } else {
-            ledBalnkStr = ledOffStr;
-            ledon = true;
-        }
-    }
+    // ==========================================
+    // 2. 正常运行模式
+    // ==========================================
     else
     {
-        ledBalnkStr = ledRed_on; // SD卡异常
+        updateStep = 0; // 重置更新步数
+        QString ledOnStr = ledGreen_on;
+
+        if(mySaveDataThread->sdCardStat())
+        {
+            if(mySaveDataThread->diskRemains() < diskMinFree)
+                ledOnStr = ledRed_on;
+            else if(mySaveDataThread->diskUsedPercent() > 70)
+                ledOnStr = ledYellow_on;
+
+            if(normalLedon) {
+                ledBalnkStr = ledOnStr;
+                normalLedon = false;
+            } else {
+                ledBalnkStr = led_off;
+                normalLedon = true;
+            }
+        }
+        else
+        {
+            ledBalnkStr = ledRed_on;
+        }
     }
 
+    // 执行系统命令
 #ifdef LINUX_MODE
     system(ledBalnkStr.toLatin1().data());
 #endif

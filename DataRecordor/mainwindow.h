@@ -8,6 +8,7 @@
 #include "data.h"
 #include "commanager.h"
 #include "CommandCtrol.h"
+#include <QElapsedTimer>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include "cpu_monitor.h"
@@ -48,7 +49,7 @@ private:
     QTcpSocket* mp_TCPSocket;
     QCpuMonitor  *monitor=nullptr;
     void socket_Send_Data(QString dataSend);
-
+    QElapsedTimer m_updateTimer;
     void startRecord();
     void blankLED();
     void sendData(QByteArray dataArray);
