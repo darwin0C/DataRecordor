@@ -244,7 +244,9 @@ void QFileSaveThread::run()
                 // 2. ★★★ 强制刷入硬件磁盘 (防断电丢失) ★★★
                 int fd = m_file.handle();
                 if (fd != -1) {
+#ifdef LINUX_MODE
                     fsync(fd);
+#endif
                 }
             }
             lastFlush = now;
