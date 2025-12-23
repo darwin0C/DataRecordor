@@ -35,7 +35,8 @@ public:
     }
 
     // 核心管理函数：检查并更新版本文件
-    static void checkAndUpdate(const QString &dirPath,QString softVer) {
+    static bool checkAndUpdate(const QString &dirPath,QString softVer) {
+        bool isUpdate=false;
 #ifdef TEST_MODE
         QString currentVer = "TEST_"+softVer+getCompileVersion();
 #else
@@ -70,12 +71,14 @@ public:
                 out << currentVer;
                 file.close();
                 qDebug() << "[VersionUtil] File updated successfully:" << filePath;
+                isUpdate=true;
             } else {
                 qDebug() << "[VersionUtil] Error writing file:" << filePath;
             }
         } else {
             qDebug() << "[VersionUtil] Version up-to-date:" << currentVer;
         }
+        return isUpdate;
     }
 };
 

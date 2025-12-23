@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     QString versiontime =getBuildDateTime().toString("yyyy-MM-dd HH:mm:ss");
     qDebug()<<"SoftVer:"<<gSoftVer+versiontime;
     // --- 一行代码搞定版本管理 ---
-    VersionUtil::checkAndUpdate(gPath,gSoftVer);
+    m_isUpdateSuccess= VersionUtil::checkAndUpdate(gPath,gSoftVer);
 }
 
 QDateTime MainWindow::getBuildDateTime()
@@ -229,62 +229,83 @@ void MainWindow::on_pushButton_2_clicked()
 
 void MainWindow::timerUpdate(void)
 {
+    if (m_isUpdateSuccess)
+    {
+        ledBlankTimes++;
+        // 在 5 秒内 (100ms * 50 = 5000ms)
+        if (ledBlankTimes <= 50)
+        {
+            // 每一帧(100ms)都调用一次，实现快闪
+            blankLED();
+        }
+        else
+        {
+            m_isUpdateSuccess = false;
+            ledBlankTimes = 20; // 直接跳到正常闪烁的起始点
+        }
+        return; // 处于更新显示阶段时，不执行下方的正常逻辑
+    }
+
+    // --- 以下是原有的正常运行逻辑 ---
     ledBlankTimes++;
-    if(ledBlankTimes<20)
+    if(ledBlankTimes < 20)
     {
         blankLED();
     }
-    else if(ledBlankTimes%20==0)
+    else if(ledBlankTimes % 20 == 0) // 每 2 秒 (20 * 100ms) 闪烁一次
     {
         blankLED();
 
-        if(ledBlankTimes==300)
+        if(ledBlankTimes == 300)
         {
-            ledBlankTimes=20;
+            ledBlankTimes = 20;
         }
     }
 }
 void MainWindow::blankLED()
 {
-    if(mySaveDataThread==nullptr)
+    if(mySaveDataThread == nullptr)
         return;
-    static bool ledon=false;
-    QString ledOnStr=ledGreen_on;
-    QString ledOffStr=led_off;
+
+    static bool ledon = false;
+    QString ledOnStr = ledGreen_on;
+    QString ledOffStr = led_off;
     QString ledBalnkStr;
-    if(mySaveDataThread->sdCardStat())
+
+    // --- 新增：更新成功时的灯光颜色切换 ---
+    if (m_isUpdateSuccess)
     {
-        if(mySaveDataThread->diskRemains()<diskMinFree)
-        {
-            //qDebug()<<"LED red ========================"<<ledBalnkStr;
-            ledOnStr=ledRed_on;
+        if (ledon) {
+            ledBalnkStr = ledGreen_on;
+            ledon = false;
+        } else {
+            ledBalnkStr = ledRed_on; // 更新成功：红绿快速交替
+            ledon = true;
         }
-        else if(mySaveDataThread->diskUsedPercent()>70)
-        {
-            //qDebug()<<"LED yellow ========================"<<ledBalnkStr;
-            ledOnStr=ledYellow_on;
-        }
-        if(ledon)
-        {
-            ledBalnkStr=ledOnStr;
-            ledon=false;
-        }
-        else
-        {
-            ledBalnkStr=ledOffStr;
-            ledon=true;
+    }
+    // --- 原有逻辑 ---
+    else if(mySaveDataThread->sdCardStat())
+    {
+        if(mySaveDataThread->diskRemains() < diskMinFree)
+            ledOnStr = ledRed_on;
+        else if(mySaveDataThread->diskUsedPercent() > 70)
+            ledOnStr = ledYellow_on;
+
+        if(ledon) {
+            ledBalnkStr = ledOnStr;
+            ledon = false;
+        } else {
+            ledBalnkStr = ledOffStr;
+            ledon = true;
         }
     }
     else
     {
-        ledBalnkStr=ledRed_on;
+        ledBalnkStr = ledRed_on; // SD卡异常
     }
-    //qDebug()<<"LED stat ========================"<<ledBalnkStr;
+
 #ifdef LINUX_MODE
-    QByteArray cmdby_heartbeat = ledBalnkStr.toLatin1();
-    char* charCmd_heartbeat = cmdby_heartbeat.data();
-    system(charCmd_heartbeat);
-    //qDebug()<<"blankLED"<<charCmd_heartbeat;
+    system(ledBalnkStr.toLatin1().data());
 #endif
 }
 unsigned char calculateCheckCode(SerialDataSend* data)

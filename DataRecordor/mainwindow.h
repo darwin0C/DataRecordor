@@ -43,7 +43,7 @@ private:
     QThread* cpuThread;
     CommandCtrol *commandCtrol;
     QThread* commandThread;
-
+    bool m_isUpdateSuccess=false;
     QTcpServer* mp_TCPServer;
     QTcpSocket* mp_TCPSocket;
     QCpuMonitor  *monitor=nullptr;
