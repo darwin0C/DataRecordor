@@ -53,7 +53,7 @@ private:
     void startRecord();
     void blankLED();
     void sendData(QByteArray dataArray);
-
+    void fastWriteGpio(int gpioNum, bool value);
     void startLEDThread();
     void startStatus();
     void startCommandCtrl();

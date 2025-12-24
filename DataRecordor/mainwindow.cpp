@@ -3,14 +3,22 @@
 #include <QDateTime>
 #include "MsgSignals.h"
 #include <QQueue>
+#include <QFile>
 #include <QMutex>
+#ifdef LINUX_MODE
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>  // 增加此行，确保文件权限宏可用
+#include <sys/types.h> // 增加此行
+#endif
 #include "versionutil.h" // 引入头文件
 QQueue<SerialDataRev> SerialDataQune;
 QMutex gMutex;
 bool SDCardStatus=true;
 int ledBlankTimes = 0;
 
-
+static const char* GPIO1_PATH = "/sys/class/gpio/gpio1/value";
+static const char* GPIO2_PATH = "/sys/class/gpio/gpio2/value";
 
 // 全局常量，编译时由编译器插入当日日期和时间
 const QString BUILD_DATE = QStringLiteral(__DATE__);  // 格式如 "Jul 18 2025"
@@ -42,6 +50,10 @@ MainWindow::MainWindow(QWidget *parent)
     qDebug()<<"SoftVer:"<<gSoftVer+versiontime;
     // --- 一行代码搞定版本管理 ---
     m_isUpdateSuccess= VersionUtil::checkAndUpdate(gPath,gSoftVer);
+    if(m_isUpdateSuccess) {
+        ledBlankTimes = 0;
+        m_updateTimer.restart(); // 确保计时从 0 开始
+    }
 }
 
 QDateTime MainWindow::getBuildDateTime()
@@ -194,15 +206,27 @@ void MainWindow::startCommandCtrl()
 
 MainWindow::~MainWindow()
 {
-    StatusTimerThread->terminate();
-    StatusTimerThread->deleteLater();
-    ledTimerThread->terminate();
-    ledTimerThread->deleteLater();
-    commandThread->terminate();
-    commandThread->deleteLater();
+    // 停止所有计时器
+    if (ledTimer) ledTimer->stop();
+    if (timerStatus) timerStatus->stop();
+
+    // 优雅退出线程
+    auto stopThread = [](QThread* t) {
+        if (t && t->isRunning()) {
+            t->quit();
+            if (!t->wait(500)) { // 等待 500ms
+                t->terminate(); // 实在退不出才强制
+            }
+        }
+    };
+
+    stopThread(StatusTimerThread);
+    stopThread(ledTimerThread);
+    stopThread(commandThread);
+    stopThread(cpuThread);
+
     delete ui;
 }
-
 
 void MainWindow::startRecord()
 {
@@ -226,26 +250,54 @@ void MainWindow::on_pushButton_2_clicked()
     if(mySaveDataThread!=NULL)
         mySaveDataThread->stopRecord();
 }
-
+void MainWindow::fastWriteGpio(int gpioNum, bool value) {
+#ifdef LINUX_MODE
+    const char* path = (gpioNum == 1) ? GPIO1_PATH : GPIO2_PATH;
+    int fd = ::open(path, O_WRONLY);
+    if (fd >= 0) {
+        ::write(fd, value ? "1" : "0", 1);
+        ::close(fd);
+    }
+#endif
+}
 void MainWindow::timerUpdate(void)
 {
-    if (m_isUpdateSuccess)
-    {
+    //    if (m_isUpdateSuccess)
+    //    {
+    //        if (!m_updateTimer.isValid()) {
+    //            m_updateTimer.start(); // 第一次进入时启动计时
+    //        }
+    //        if (m_updateTimer.elapsed() < 5000)
+    //        {
+    //            blankLED();
+    //            return; // 跳过后续正常逻辑
+    //        }
+    //        else
+    //        {
+    //            m_isUpdateSuccess = false;
+    //            m_updateTimer.invalidate(); // 失效计时器以备下次使用
+    //            ledBlankTimes = 20;         // 重置正常闪烁的计数器
+    //        }
+    //    }
+
+    if (m_isUpdateSuccess) {
+        // 第一次进入时启动计时
         if (!m_updateTimer.isValid()) {
-            m_updateTimer.start(); // 第一次进入时启动计时
+            m_updateTimer.start();
         }
-        if (m_updateTimer.elapsed() < 5000)
-        {
-            blankLED();
-            return; // 跳过后续正常逻辑
-        }
-        else
-        {
+
+        // 5秒判断
+        if (m_updateTimer.elapsed() < 1000*10) {
+            blankLED(); // 执行红-灭-绿-灭逻辑
+        } else {
             m_isUpdateSuccess = false;
-            m_updateTimer.invalidate(); // 失效计时器以备下次使用
-            ledBlankTimes = 20;         // 重置正常闪烁的计数器
+            m_updateTimer.invalidate();
+            ledBlankTimes = 20; // 回归正常逻辑起始计数
+            fastWriteGpio(1, 0); fastWriteGpio(2, 0); // 状态切换瞬间灭灯避免视觉混乱
         }
+        return;
     }
+
 
     // --- 以下是原有的正常运行逻辑 ---
     ledBlankTimes++;
@@ -263,61 +315,107 @@ void MainWindow::timerUpdate(void)
         }
     }
 }
+//void MainWindow::blankLED()
+//{
+//    if(mySaveDataThread == nullptr) return;
+
+//    static int updateStep = 0; // 用于更新成功时的四步循环
+//    static bool normalLedon = false; // 用于正常运行时的亮灭切换
+
+//    QString ledBalnkStr;
+
+//    // ==========================================
+//    // 1. 更新成功模式：红 -> 灭 -> 绿 -> 灭
+//    // ==========================================
+//    if (m_isUpdateSuccess)
+//    {
+//        switch (updateStep % 4) {
+//        case 0: ledBalnkStr = ledRed_on;   break; // 红灯
+//        case 1: ledBalnkStr = led_off;    break; // 不亮
+//        case 2: ledBalnkStr = ledGreen_on; break; // 绿灯
+//        case 3: ledBalnkStr = led_off;    break; // 不亮
+//        }
+//        updateStep++;
+//    }
+//    // ==========================================
+//    // 2. 正常运行模式
+//    // ==========================================
+//    else
+//    {
+//        updateStep = 0; // 重置更新步数
+//        QString ledOnStr = ledGreen_on;
+
+//        if(mySaveDataThread->sdCardStat())
+//        {
+//            if(mySaveDataThread->diskRemains() < diskMinFree)
+//                ledOnStr = ledRed_on;
+//            else if(mySaveDataThread->diskUsedPercent() > 70)
+//                ledOnStr = ledYellow_on;
+
+//            if(normalLedon) {
+//                ledBalnkStr = ledOnStr;
+//                normalLedon = false;
+//            } else {
+//                ledBalnkStr = led_off;
+//                normalLedon = true;
+//            }
+//        }
+//        else
+//        {
+//            ledBalnkStr = ledRed_on;
+//        }
+//    }
+
+//    // 执行系统命令
+//#ifdef LINUX_MODE
+//    system(ledBalnkStr.toLatin1().data());
+//#endif
+//}
 void MainWindow::blankLED()
 {
     if(mySaveDataThread == nullptr) return;
 
-    static int updateStep = 0; // 用于更新成功时的四步循环
-    static bool normalLedon = false; // 用于正常运行时的亮灭切换
-
-    QString ledBalnkStr;
+    static int updateStep = 0; // 用于四步循环计数
+    static bool normalLedon = false;
 
     // ==========================================
-    // 1. 更新成功模式：红 -> 灭 -> 绿 -> 灭
+    // 1. 更新成功模式：红 -> 灭 -> 绿 -> 灭 (100ms/步)
     // ==========================================
-    if (m_isUpdateSuccess)
-    {
+    if (m_isUpdateSuccess) {
         switch (updateStep % 4) {
-        case 0: ledBalnkStr = ledRed_on;   break; // 红灯
-        case 1: ledBalnkStr = led_off;    break; // 不亮
-        case 2: ledBalnkStr = ledGreen_on; break; // 绿灯
-        case 3: ledBalnkStr = led_off;    break; // 不亮
+        case 0: fastWriteGpio(1, 0); fastWriteGpio(2, 1); break; // 红 (GPIO2为红)
+        case 1: fastWriteGpio(1, 0); fastWriteGpio(2, 0); break; // 灭
+        case 2: fastWriteGpio(1, 1); fastWriteGpio(2, 0); break; // 绿 (GPIO1为绿)
+        case 3: fastWriteGpio(1, 0); fastWriteGpio(2, 0); break; // 灭
         }
         updateStep++;
+        return;
     }
+
     // ==========================================
     // 2. 正常运行模式
     // ==========================================
-    else
-    {
-        updateStep = 0; // 重置更新步数
-        QString ledOnStr = ledGreen_on;
+    updateStep = 0; // 重置更新步数
+    bool targetG1 = false; // 绿
+    bool targetG2 = false; // 红
 
-        if(mySaveDataThread->sdCardStat())
-        {
-            if(mySaveDataThread->diskRemains() < diskMinFree)
-                ledOnStr = ledRed_on;
-            else if(mySaveDataThread->diskUsedPercent() > 70)
-                ledOnStr = ledYellow_on;
-
-            if(normalLedon) {
-                ledBalnkStr = ledOnStr;
-                normalLedon = false;
+    if(mySaveDataThread->sdCardStat()) {
+        normalLedon = !normalLedon; // 状态翻转
+        if(normalLedon) {
+            if(mySaveDataThread->diskRemains() < diskMinFree) {
+                targetG2 = true; // 空间不足：红闪
+            } else if(mySaveDataThread->diskUsedPercent() > 70) {
+                targetG1 = true; targetG2 = true; // 空间警告：黄闪
             } else {
-                ledBalnkStr = led_off;
-                normalLedon = true;
+                targetG1 = true; // 正常：绿闪
             }
         }
-        else
-        {
-            ledBalnkStr = ledRed_on;
-        }
+    } else {
+        targetG2 = true; // SD卡异常：红常亮
     }
 
-    // 执行系统命令
-#ifdef LINUX_MODE
-    system(ledBalnkStr.toLatin1().data());
-#endif
+    fastWriteGpio(1, targetG1);
+    fastWriteGpio(2, targetG2);
 }
 unsigned char calculateCheckCode(SerialDataSend* data)
 {
